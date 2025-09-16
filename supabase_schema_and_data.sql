@@ -19,7 +19,6 @@ FOR SELECT
 USING (auth.uid() = id);
 
 -- Policy to allow authenticated users to update their own profile.
--- Corrected syntax: WITH CHECK immediately follows USING.
 CREATE POLICY "Allow authenticated users to update their own profile"
 ON public.profiles
 FOR UPDATE
