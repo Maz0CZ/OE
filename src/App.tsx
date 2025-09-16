@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import Layout from "@/components/Layout";
-import AuthLayout from "@/components/AuthLayout"; // Import the new AuthLayout
 import Dashboard from "@/pages/Dashboard";
 import ConflictsPage from "@/pages/ConflictsPage";
 import Admin from "@/pages/Admin";
@@ -15,102 +14,37 @@ import CountriesPage from "./pages/CountriesPage";
 import ViolationsPage from "./pages/ViolationsPage";
 import UNDeclarationsPage from "./pages/UNDeclarationsPage";
 import PostDetailPage from "./pages/PostDetailPage";
+import ProfilePage from "./pages/ProfilePage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/sonner";
 
 const queryClient = new QueryClient();
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
           <Router>
             <Routes>
-              <Route
-                path="/login"
-                element={
-                  <AuthLayout> {/* Use AuthLayout for login */}
-                    <LoginPage />
-                  </AuthLayout>
-                }
-              />
-              <Route
-                path="/register"
-                element={
-                  <AuthLayout> {/* Use AuthLayout for register */}
-                    <RegisterPage />
-                  </AuthLayout>
-                }
-              />
-              <Route
-                path="/"
-                element={
-                  <Layout>
-                    <Dashboard />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/conflicts"
-                element={
-                  <Layout>
-                    <ConflictsPage />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <Layout>
-                    <Admin />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/forum"
-                element={
-                  <Layout>
-                    <Forum />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/forum/:postId"
-                element={
-                  <Layout>
-                    <PostDetailPage />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/countries"
-                element={
-                  <Layout>
-                    <CountriesPage />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/violations"
-                element={
-                  <Layout>
-                    <ViolationsPage />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/un-declarations"
-                element={
-                  <Layout>
-                    <UNDeclarationsPage />
-                  </Layout>
-                }
-              />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="conflicts" element={<ConflictsPage />} />
+                <Route path="admin" element={<Admin />} />
+                <Route path="forum" element={<Forum />} />
+                <Route path="forum/:postId" element={<PostDetailPage />} />
+                <Route path="countries" element={<CountriesPage />} />
+                <Route path="violations" element={<ViolationsPage />} />
+                <Route path="un-declarations" element={<UNDeclarationsPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+              </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Router>
+          <Toaster position="top-center" />
         </QueryClientProvider>
-        {/* Toaster is now part of AuthLayout and Layout, remove from here */}
       </AuthProvider>
     </ThemeProvider>
   );
