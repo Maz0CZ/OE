@@ -2,7 +2,8 @@ import React from "react";
 import { useTheme } from "next-themes";
 import Header from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
-import { MadeWithDyad } from "@/components/made-with-dyad"; // Assuming this is a footer component
+import { MadeWithDyad } from "@/components/made-with-dyad";
+import { Toaster } from "@/components/ui/sonner"; // Import Toaster
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -36,6 +37,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </main>
       </div>
       <MadeWithDyad />
+      <Toaster position="top-center" /> {/* Add Toaster here */}
     </div>
   );
 };

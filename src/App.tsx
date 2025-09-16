@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import Layout from "@/components/Layout";
-import AuthLayout from "@/components/AuthLayout"; // Import the new AuthLayout
+import AuthLayout from "@/components/AuthLayout"; // Keep AuthLayout for login/register
 import Dashboard from "@/pages/Dashboard";
 import ConflictsPage from "@/pages/ConflictsPage";
 import Admin from "@/pages/Admin";
@@ -29,7 +29,7 @@ function App() {
               <Route
                 path="/login"
                 element={
-                  <AuthLayout> {/* Use AuthLayout for login */}
+                  <AuthLayout>
                     <LoginPage />
                   </AuthLayout>
                 }
@@ -37,7 +37,7 @@ function App() {
               <Route
                 path="/register"
                 element={
-                  <AuthLayout> {/* Use AuthLayout for register */}
+                  <AuthLayout>
                     <RegisterPage />
                   </AuthLayout>
                 }
@@ -110,7 +110,6 @@ function App() {
             </Routes>
           </Router>
         </QueryClientProvider>
-        {/* Toaster is now part of AuthLayout and Layout, remove from here */}
       </AuthProvider>
     </ThemeProvider>
   );
