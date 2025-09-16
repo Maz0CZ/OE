@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { LogOut, Menu, UserCircle } from "lucide-react"; // Added UserCircle icon
+import { LogOut, Menu, UserCircle } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Sidebar } from "@/components/Sidebar";
+import { Sidebar } from "@/components/Sidebar"; // Keep for mobile sheet
+import { DesktopNav } from "@/components/DesktopNav"; // Import DesktopNav
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -14,7 +15,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"; // Import DropdownMenu components
+} from "@/components/ui/dropdown-menu";
 
 const Header: React.FC = () => {
   const { isAuthenticated, currentUser, logout } = useAuth();
@@ -41,6 +42,9 @@ const Header: React.FC = () => {
               Open<span className="text-highlight">Eyes</span>
             </span>
           </Link>
+
+          {/* Desktop Navigation */}
+          <DesktopNav /> {/* Render DesktopNav here */}
         </div>
 
         <div className="flex items-center space-x-4">

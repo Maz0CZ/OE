@@ -9,7 +9,8 @@ import {
 import { MapPin } from "lucide-react";
 import { feature } from "topojson-client";
 import ConflictDetailModal from "./ConflictDetailModal";
-import CountryDetailModal from "./CountryDetailModal"; // Import the new CountryDetailModal
+import CountryDetailModal from "./CountryDetailModal";
+import { cn } from "@/lib/utils"; // Import cn for conditional class names
 
 interface ConflictLocation {
   id: string;
@@ -102,13 +103,11 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
           zoom={position.zoom}
           center={position.coordinates}
           onMoveEnd={handleZoomableGroupMoveEnd}
-          minZoom={1} // Minimum zoom level to prevent zooming out too much
-          maxZoom={8} // Maximum zoom level
-          // Restrict panning to keep the world map within view
-          // The extent is slightly larger than the 1000x500 viewBox to allow some panning at max zoom
+          minZoom={1}
+          maxZoom={8}
           translateExtent={[
-            [-50, -50], // Top-left corner
-            [1050, 550], // Bottom-right corner
+            [-50, -50],
+            [1050, 550],
           ]}
         >
           <Geographies geography={geographyData}>
@@ -128,12 +127,14 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
           </Geographies>
           {conflictLocations.map(({ id, name, lat, lon }) => (
             <Marker key={id} coordinates={[lon, lat]} onClick={() => handleMarkerClick(id)}>
-              <MapPin
-                size={30} // Increased size for better visibility
-                className="text-highlight drop-shadow-md cursor-pointer hover:scale-125 transition-transform duration-200"
-                style={{ transform: "translate(-50%, -100%)" }}
-              />
-              <title>{name}</title> {/* Tooltip on hover */}
+              <g className="z-20"> {/* Added z-20 to the group */}
+                <MapPin
+                  size={30}
+                  className="text-highlight drop-shadow-md cursor-pointer hover:scale-125 transition-transform duration-200"
+                  style={{ transform: "translate(-50%, -100%)" }}
+                />
+                <title>{name}</title>
+              </g>
             </Marker>
           ))}
         </ZoomableGroup>
