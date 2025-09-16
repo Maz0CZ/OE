@@ -25,7 +25,7 @@ interface ModerationPostData { // Interface for data fetched from Supabase
   moderation_status: "pending" | "approved" | "rejected";
   profiles: {
     username: string;
-  } | null; // profiles can be null if not found
+  }[] | null; // Changed to array of profiles, or null
 }
 
 interface ModerationPostForList { // Interface for data passed to ModerationList component
@@ -90,7 +90,7 @@ const Admin: React.FC = () => {
         id: post.id,
         title: post.title,
         content: post.content,
-        author_username: post.profiles?.username || "Unknown", // Provide author_username
+        author_username: post.profiles?.[0]?.username || "Unknown", // Fix: Access username from the first element of the profiles array
       }));
     },
     enabled: isAdmin || isModerator, // Only fetch if user is admin or moderator
