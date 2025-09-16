@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input"; // Import Input for search
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { logActivity } from "@/utils/logger";
 import { useAuth } from "@/context/AuthContext";
-import ConflictDetailModal from "@/components/ConflictDetailModal"; // Import the modal
+import ConflictDetailModal from "@/components/ConflictDetailModal";
 
 interface Conflict {
   id: string;
@@ -65,6 +66,7 @@ const ConflictsPage: React.FC = () => {
   const { currentUser } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
 
   const { data: conflictsData, isLoading, error } = useQuery<Conflict[]>({
     queryKey: ['conflicts'],
@@ -99,6 +101,12 @@ const ConflictsPage: React.FC = () => {
     // In a real app, open a form to submit an update
   };
 
+  // Filter conflicts based on search term
+  const filteredConflicts = conflictsData?.filter(conflict =>
+    conflict.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conflict.region.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (isLoading) {
     return (
       <div className="space-y-8 text-center">
@@ -127,6 +135,12 @@ const ConflictsPage: React.FC = () => {
       <Card className="bg-card border-highlight/20 p-6">
         <CardHeader>
           <CardTitle className="text-2xl font-semibold text-foreground">Conflict List</CardTitle>
+          <Input
+            placeholder="Search by name or region..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="mt-2 bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+          />
         </CardHeader>
         <CardContent>
           <div className="rounded-md border border-highlight/20 overflow-x-auto">
@@ -148,12 +162,12 @@ const ConflictsPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {conflictsData?.length === 0 ? (
+                {filteredConflicts?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">No conflicts found. Add some in Supabase!</TableCell>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">No conflicts found matching your search.</TableCell>
                   </TableRow>
                 ) : (
-                  conflictsData?.map((conflict) => (
+                  filteredConflicts?.map((conflict) => (
                     <TableRow key={conflict.id} className="hover:bg-accent/20">
                       <TableCell className="font-medium text-muted-foreground">{conflict.id}</TableCell>
                       <TableCell className="text-foreground font-semibold">{conflict.name}</TableCell>

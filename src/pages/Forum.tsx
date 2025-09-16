@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { logActivity } from "@/utils/logger"; // Import the new logger
+import { logActivity } from "@/utils/logger";
 
 
 interface Post {
@@ -33,6 +33,7 @@ const Forum: React.FC = () => {
   const queryClient = useQueryClient();
   const [newPostTitle, setNewPostTitle] = useState("")
   const [newPostContent, setNewPostContent] = useState("")
+  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
 
   const { data: posts, isLoading, error } = useQuery<Post[]>({
     queryKey: ['forumPosts', currentUser?.id], // Add currentUser.id to queryKey for user-specific reactions
@@ -152,6 +153,12 @@ const Forum: React.FC = () => {
     queryClient.invalidateQueries({ queryKey: ['forumPosts'] }); // Refetch to update counts and user reaction
   };
 
+  // Filter posts based on search term
+  const filteredPosts = posts?.filter(post =>
+    post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    post.content.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (isLoading) {
     return (
       <div className="space-y-8">
@@ -222,11 +229,20 @@ const Forum: React.FC = () => {
         </Card>
       )}
 
+      <div className="flex justify-center mb-4">
+        <Input
+          placeholder="Search forum posts by title or content..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full max-w-md bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {posts?.length === 0 ? (
-          <p className="text-muted-foreground text-center col-span-full">No forum posts yet. Be the first to create one!</p>
+        {filteredPosts?.length === 0 ? (
+          <p className="text-muted-foreground text-center col-span-full">No forum posts found matching your search.</p>
         ) : (
-          posts?.map((post) => (
+          filteredPosts?.map((post) => (
             <ForumPostCard
               key={post.id}
               id={post.id}

@@ -1,9 +1,16 @@
-import React from "react"
+import React, { useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
-import { logActivity } from "@/utils/logger"; // Import the new logger
-import { useAuth } from "@/context/AuthContext"; // Import useAuth to get currentUser
+import { logActivity } from "@/utils/logger";
+import { useAuth } from "@/context/AuthContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; // Import Select components
 
 interface Violation {
   id: string;
@@ -15,7 +22,9 @@ interface Violation {
 }
 
 const ViolationsPage = () => {
-  const { currentUser } = useAuth(); // Get currentUser for logging
+  const { currentUser } = useAuth();
+  const [selectedSeverity, setSelectedSeverity] = useState<string>("all"); // New state for severity filter
+
   const { data: violations, isLoading, error } = useQuery<Violation[]>({
     queryKey: ['violations'],
     queryFn: async () => {
@@ -31,6 +40,11 @@ const ViolationsPage = () => {
       return data as Violation[];
     }
   });
+
+  // Filter violations based on selected severity
+  const filteredViolations = violations?.filter(violation =>
+    selectedSeverity === "all" || violation.severity === selectedSeverity
+  );
 
   if (isLoading) {
     return (
@@ -59,12 +73,27 @@ const ViolationsPage = () => {
         Detailed reports and statistics on human rights violations worldwide.
       </p>
       
+      <div className="flex justify-end mb-4">
+        <Select onValueChange={setSelectedSeverity} value={selectedSeverity}>
+          <SelectTrigger className="w-[180px] bg-secondary border-secondary-foreground text-primary-foreground">
+            <SelectValue placeholder="Filter by Severity" />
+          </SelectTrigger>
+          <SelectContent className="bg-card border-highlight/20">
+            <SelectItem value="all">All Severities</SelectItem>
+            <SelectItem value="critical">Critical</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {violations?.length === 0 ? (
-          <p className="text-muted-foreground text-center col-span-full">No violations found. Add some in Supabase!</p>
+        {filteredViolations?.length === 0 ? (
+          <p className="text-muted-foreground text-center col-span-full">No violations found matching your criteria.</p>
         ) : (
-          violations?.map((violation) => (
-            <Card key={violation.id} className="bg-card border-highlight/20 hover:border-highlight transition-colors flex flex-col"> {/* Fix: Changed 'vi.id' to 'violation.id' */}
+          filteredViolations?.map((violation) => (
+            <Card key={violation.id} className="bg-card border-highlight/20 hover:border-highlight transition-colors flex flex-col">
               <CardHeader>
                 <CardTitle className="text-xl font-semibold text-foreground">{violation.type}</CardTitle>
                 <p className="text-sm text-muted-foreground">{violation.location} - {new Date(violation.date).toLocaleDateString()}</p>

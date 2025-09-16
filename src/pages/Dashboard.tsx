@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import MetricCard from "@/components/MetricCard";
 import { Swords, TriangleAlert, Building, CircleDot } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { logActivity } from "@/utils/logger";
 import { useAuth } from "@/context/AuthContext";
+import { Input } from "@/components/ui/input"; // Import Input for search
 
 interface ConflictSummary {
   id: string;
@@ -16,7 +17,6 @@ interface ConflictSummary {
   severity: string;
   lat: number | null;
   lon: number | null;
-  // Removed: summary, wikipedia_url, conflict_type, countries_involved
 }
 
 interface ConflictLocation {
@@ -28,6 +28,7 @@ interface ConflictLocation {
 
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
+  const [activitySearchTerm, setActivitySearchTerm] = useState(""); // New state for activity search
 
   // Fetch all conflicts for metrics, pie chart, and map
   const { data: allConflicts, isLoading: conflictsLoading, error: conflictsError } = useQuery<ConflictSummary[]>({
@@ -35,7 +36,7 @@ const Dashboard: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('conflicts')
-        .select('id, name, status, severity, lat, lon'); // Removed non-existent columns
+        .select('id, name, status, severity, lat, lon');
 
       if (error) {
         logActivity(`Error fetching all conflicts summary: ${error.message}`, 'error', currentUser?.id);
@@ -112,7 +113,7 @@ const Dashboard: React.FC = () => {
         .from('logs')
         .select('id, message, created_at')
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(10); // Increased limit to make search more useful
 
       if (error) {
         logActivity(`Error fetching recent logs: ${error.message}`, 'error', currentUser?.id);
@@ -121,6 +122,11 @@ const Dashboard: React.FC = () => {
       return data;
     }
   });
+
+  // Filtered logs based on search term
+  const filteredLogs = recentLogs?.filter(log =>
+    log.message.toLowerCase().includes(activitySearchTerm.toLowerCase())
+  );
 
   if (conflictsLoading || violationsLoading || unDeclarationsLoading || logsLoading) {
     return (
@@ -192,12 +198,18 @@ const Dashboard: React.FC = () => {
         <Card className="bg-card border-highlight/20">
           <CardHeader>
             <CardTitle className="text-2xl font-semibold text-foreground">Recent Activity</CardTitle>
+            <Input
+              placeholder="Search activity..."
+              value={activitySearchTerm}
+              onChange={(e) => setActivitySearchTerm(e.target.value)}
+              className="mt-2 bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+            />
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentLogs?.length === 0 ? (
-              <p className="text-muted-foreground">No recent activity logs.</p>
+            {filteredLogs?.length === 0 ? (
+              <p className="text-muted-foreground">No recent activity logs found.</p>
             ) : (
-              recentLogs?.map((log) => (
+              filteredLogs?.map((log) => (
                 <div
                   key={log.id}
                   className="p-3 bg-secondary rounded-md text-muted-foreground hover:bg-highlight/20 hover:text-highlight transition-colors cursor-pointer"

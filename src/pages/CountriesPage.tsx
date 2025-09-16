@@ -1,22 +1,25 @@
-import React from "react"
+import React, { useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import CountryCard from "@/components/CountryCard"
+import { Input } from "@/components/ui/input"; // Import Input for search
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabaseClient"
-import { logActivity } from "@/utils/logger"; // Import the new logger
-import { useAuth } from "@/context/AuthContext"; // Import useAuth to get currentUser
+import { logActivity } from "@/utils/logger";
+import { useAuth } from "@/context/AuthContext";
 
 interface Country {
   id: string;
   name: string;
   population: number;
-  is_democracy: boolean; // Changed to is_democracy to match Supabase column
+  is_democracy: boolean;
   president: string;
-  flag_emoji: string; // Changed to flag_emoji to match Supabase column
+  flag_emoji: string;
 }
 
 const CountriesPage = () => {
-  const { currentUser } = useAuth(); // Get currentUser for logging
+  const { currentUser } = useAuth();
+  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
+
   const { data: countriesData, isLoading, error } = useQuery<Country[]>({
     queryKey: ['countries'],
     queryFn: async () => {
@@ -32,6 +35,11 @@ const CountriesPage = () => {
       return data as Country[];
     }
   });
+
+  // Filter countries based on search term
+  const filteredCountries = countriesData?.filter(country =>
+    country.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (isLoading) {
     return (
@@ -58,11 +66,20 @@ const CountriesPage = () => {
         Explore comprehensive data on countries, their populations, governance, and leadership.
       </p>
 
+      <div className="flex justify-center mb-4">
+        <Input
+          placeholder="Search countries by name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full max-w-md bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {countriesData?.length === 0 ? (
-          <p className="text-muted-foreground text-center col-span-full">No countries found. Add some in Supabase!</p>
+        {filteredCountries?.length === 0 ? (
+          <p className="text-muted-foreground text-center col-span-full">No countries found matching your search. Add some in Supabase!</p>
         ) : (
-          countriesData?.map((country) => (
+          filteredCountries?.map((country) => (
             <CountryCard
               key={country.id}
               name={country.name}

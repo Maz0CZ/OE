@@ -1,9 +1,10 @@
-import React from "react"
+import React, { useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"; // Import Input for search
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
-import { logActivity } from "@/utils/logger"; // Import the new logger
-import { useAuth } from "@/context/AuthContext"; // Import useAuth to get currentUser
+import { logActivity } from "@/utils/logger";
+import { useAuth } from "@/context/AuthContext";
 
 interface UNDeclaration {
   id: string;
@@ -14,7 +15,9 @@ interface UNDeclaration {
 }
 
 const UNDeclarationsPage = () => {
-  const { currentUser } = useAuth(); // Get currentUser for logging
+  const { currentUser } = useAuth();
+  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
+
   const { data: declarations, isLoading, error } = useQuery<UNDeclaration[]>({
     queryKey: ['unDeclarations'],
     queryFn: async () => {
@@ -30,6 +33,12 @@ const UNDeclarationsPage = () => {
       return data as UNDeclaration[];
     }
   });
+
+  // Filter declarations based on search term
+  const filteredDeclarations = declarations?.filter(declaration =>
+    declaration.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    declaration.summary.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (isLoading) {
     return (
@@ -56,11 +65,20 @@ const UNDeclarationsPage = () => {
         Comprehensive data on United Nations declarations related to conflicts and human rights.
       </p>
 
+      <div className="flex justify-center mb-4">
+        <Input
+          placeholder="Search declarations by title or summary..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full max-w-md bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+        />
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {declarations?.length === 0 ? (
-          <p className="text-muted-foreground text-center col-span-full">No UN declarations found. Add some in Supabase!</p>
+        {filteredDeclarations?.length === 0 ? (
+          <p className="text-muted-foreground text-center col-span-full">No UN declarations found matching your search.</p>
         ) : (
-          declarations?.map((declaration) => (
+          filteredDeclarations?.map((declaration) => (
             <Card key={declaration.id} className="bg-card border-highlight/20 hover:border-highlight transition-colors flex flex-col">
               <CardHeader>
                 <CardTitle className="text-xl font-semibold text-foreground">{declaration.title}</CardTitle>
