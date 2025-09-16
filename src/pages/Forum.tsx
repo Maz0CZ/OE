@@ -19,9 +19,8 @@ interface Post {
   created_at: string;
   author_id: string;
   moderation_status: "pending" | "approved" | "rejected";
-  profiles: {
-    username: string;
-  };
+  author_username: string; // From the view
+  author_avatar_url?: string; // From the view
   likes_count: number; // Aggregated count
   dislikes_count: number; // Aggregated count
   comments_count: number; // Aggregated count
@@ -38,15 +37,9 @@ const Forum: React.FC = () => {
     queryKey: ['forumPosts', currentUser?.id], // Add currentUser.id to queryKey for user-specific reactions
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('posts')
+        .from('posts_with_profiles') // Query the new view
         .select(`
-          id,
-          title,
-          content,
-          created_at,
-          author_id,
-          moderation_status,
-          profiles(username),
+          *,
           likes_count:post_reactions(count),
           dislikes_count:post_reactions(count),
           comments_count:comments(count),
@@ -82,6 +75,7 @@ const Forum: React.FC = () => {
     mutationFn: async () => {
       if (!currentUser?.id) throw new Error("User not authenticated")
       
+      // Insert into the base 'posts' table, not the view
       const { data, error } = await supabase
         .from('posts')
         .insert({
@@ -231,7 +225,7 @@ const Forum: React.FC = () => {
               id={post.id}
               title={post.title}
               content={post.content}
-              author={post.profiles?.username || "Unknown"}
+              author={post.author_username || "Unknown"} {/* Use author_username from view */}
               likes={post.likes_count}
               dislikes={post.dislikes_count}
               commentsCount={post.comments_count}

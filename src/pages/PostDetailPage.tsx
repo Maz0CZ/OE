@@ -16,9 +16,8 @@ interface Post {
   created_at: string;
   author_id: string;
   moderation_status: "pending" | "approved" | "rejected";
-  profiles: {
-    username: string;
-  };
+  author_username: string; // From the view
+  author_avatar_url?: string; // From the view
 }
 
 interface PostReaction {
@@ -34,8 +33,8 @@ const PostDetailPage: React.FC = () => {
     queryKey: ['post', postId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('posts')
-        .select('*, profiles(username)')
+        .from('posts_with_profiles') // Query the new view
+        .select('*') // Select all columns from the view
         .eq('id', postId)
         .single();
 
@@ -172,7 +171,7 @@ const PostDetailPage: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-4xl font-bold text-foreground">{post.title}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            by <span className="font-semibold">{post.profiles?.username || "Unknown"}</span> on {new Date(post.created_at).toLocaleDateString()}
+            by <span className="font-semibold">{post.author_username || "Unknown"}</span> on {new Date(post.created_at).toLocaleDateString()}
           </p>
         </CardHeader>
         <CardContent>
