@@ -1,22 +1,103 @@
-import React from "react";
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import UserTable from "@/components/UserTable";
+import ModerationList from "@/components/ModerationList";
+import { toast } from "sonner";
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  status: "active" | "banned";
+}
+
+interface ModerationPost {
+  id: string;
+  title: string;
+  author: string;
+  content: string;
+}
 
 const Admin: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([
+    { id: "user1", name: "Alice Smith", email: "alice@example.com", status: "active" },
+    { id: "user2", name: "Bob Johnson", email: "bob@example.com", status: "active" },
+    { id: "user3", name: "Charlie Brown", email: "charlie@example.com", status: "banned" },
+    { id: "user4", name: "Diana Prince", email: "diana@example.com", status: "active" },
+  ]);
+
+  const [moderationPosts, setModerationPosts] = useState<ModerationPost[]>([
+    { id: "postA", title: "Spam Post Detected", author: "Spammer", content: "Buy our products! Best deals ever!" },
+    { id: "postB", title: "Questionable Content", author: "Anonymous", content: "Is it true that... [sensitive content]" },
+  ]);
+
+  const [systemLogs, setSystemLogs] = useState<string[]>([
+    "2023-10-27 10:00:00 - User 'Alice Smith' logged in.",
+    "2023-10-27 10:05:15 - New forum post created by 'Bob Johnson'.",
+    "2023-10-27 10:10:30 - Admin 'Current Admin' reviewed 'Spam Post Detected'.",
+    "2023-10-27 10:15:45 - User 'Charlie Brown' attempted to log in (banned).",
+  ]);
+
+  const handleBanUser = (userId: string) => {
+    setUsers(users.map(user => user.id === userId ? { ...user, status: "banned" } : user));
+    setSystemLogs([...systemLogs, `2023-10-27 ${new Date().toLocaleTimeString()} - User '${userId}' banned.`]);
+    toast.success(`User ${userId} has been banned.`);
+  };
+
+  const handleUnbanUser = (userId: string) => {
+    setUsers(users.map(user => user.id === userId ? { ...user, status: "active" } : user));
+    setSystemLogs([...systemLogs, `2023-10-27 ${new Date().toLocaleTimeString()} - User '${userId}' unbanned.`]);
+    toast.success(`User ${userId} has been unbanned.`);
+  };
+
+  const handleDeletePost = (postId: string) => {
+    setModerationPosts(moderationPosts.filter(post => post.id !== postId));
+    setSystemLogs([...systemLogs, `2023-10-27 ${new Date().toLocaleTimeString()} - Post '${postId}' deleted by admin.`]);
+    toast.success(`Post ${postId} has been deleted.`);
+  };
+
+  const handleReviewPost = (postId: string) => {
+    setSystemLogs([...systemLogs, `2023-10-27 ${new Date().toLocaleTimeString()} - Admin reviewed post '${postId}'.`]);
+    toast.info(`Reviewing post ${postId} (placeholder action).`);
+    // In a real app, this would open a detailed view for moderation
+  };
+
   return (
-    <div className="p-6 bg-card rounded-lg shadow-lg">
-      <h1 className="text-4xl font-bold mb-6 text-highlight">Admin Panel</h1>
-      <p className="text-lg text-muted-foreground">
-        This is a placeholder for the admin panel. Here, administrators can manage users, content, and settings.
+    <div className="space-y-8">
+      <h1 className="text-5xl font-extrabold text-foreground text-center">Admin Panel</h1>
+      <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto">
+        Manage users, moderate content, and monitor system activities.
       </p>
-      <div className="mt-8 space-y-4">
-        <div className="bg-secondary p-4 rounded-md">
-          <h2 className="text-xl font-semibold text-primary-foreground">User Management</h2>
-          <p className="text-muted-foreground">View, edit, and ban users.</p>
-        </div>
-        <div className="bg-secondary p-4 rounded-md">
-          <h2 className="text-xl font-semibold text-primary-foreground">Content Moderation</h2>
-          <p className="text-muted-foreground">Review and manage forum posts.</p>
-        </div>
-      </div>
+
+      <Card className="bg-card border-highlight/20 p-6">
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold text-foreground">User Management</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <UserTable users={users} onBanUser={handleBanUser} onUnbanUser={handleUnbanUser} />
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card border-highlight/20 p-6">
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold text-foreground">Content Moderation</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ModerationList posts={moderationPosts} onDeletePost={handleDeletePost} onReviewPost={handleReviewPost} />
+        </CardContent>
+      </Card>
+
+      <Card className="bg-card border-highlight/20 p-6">
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold text-foreground">System Logs</CardTitle>
+        </CardHeader>
+        <CardContent className="max-h-60 overflow-y-auto space-y-2 text-sm bg-secondary p-4 rounded-md">
+          {systemLogs.map((log, index) => (
+            <p key={index} className="text-muted-foreground font-mono">{log}</p>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 };
