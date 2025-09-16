@@ -151,22 +151,22 @@ const ConflictsPage: React.FC = () => {
           <CardTitle className="text-2xl font-semibold text-foreground">Conflict List</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-highlight/20 overflow-hidden">
+          <div className="rounded-md border border-highlight/20 overflow-x-auto"> {/* Added overflow-x-auto */}
             <Table>
               <TableHeader>
                 <TableRow className="bg-secondary hover:bg-secondary">
-                  <TableHead className="text-highlight">ID</TableHead>
-                  <TableHead className="text-highlight">
+                  <TableHead className="text-highlight min-w-[80px]">ID</TableHead>
+                  <TableHead className="text-highlight min-w-[150px]">
                     <Button variant="ghost" className="p-0 h-auto">
                       Name <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                   </TableHead>
-                  <TableHead className="text-highlight">Region</TableHead>
-                  <TableHead className="text-highlight">Status</TableHead>
-                  <TableHead className="text-highlight">Severity</TableHead>
-                  <TableHead className="text-highlight">Start Date</TableHead>
-                  <TableHead className="text-highlight text-right">Casualties</TableHead>
-                  <TableHead className="text-highlight text-right">Actions</TableHead>
+                  <TableHead className="text-highlight min-w-[120px]">Region</TableHead>
+                  <TableHead className="text-highlight min-w-[120px]">Status</TableHead>
+                  <TableHead className="text-highlight min-w-[120px]">Severity</TableHead>
+                  <TableHead className="text-highlight min-w-[120px]">Start Date</TableHead>
+                  <TableHead className="text-highlight text-right min-w-[120px]">Casualties</TableHead>
+                  <TableHead className="text-highlight text-right min-w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

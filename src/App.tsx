@@ -8,9 +8,9 @@ import Dashboard from "./pages/Dashboard";
 import Forum from "./pages/Forum";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
-import LoginPage from "./pages/LoginPage"; // Import the new LoginPage
-import ConflictsPage from "./pages/ConflictsPage"; // Will be created next
-import { AuthProvider, useAuth, UserRole } from "./context/AuthContext"; // Import AuthProvider and useAuth
+import LoginPage from "./pages/LoginPage";
+import ConflictsPage from "./pages/ConflictsPage";
+import { AuthProvider, useAuth, UserRole } from "./context/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -27,9 +27,10 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: UserR
 
   if (allowedRoles && currentUser && !allowedRoles.includes(currentUser.role)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-        <h1 className="text-4xl font-bold">Access Denied</h1>
-        <p className="text-xl text-muted-foreground">You do not have permission to view this page.</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4">
+        <h1 className="text-4xl font-bold mb-4">Access Denied</h1>
+        <p className="text-xl text-muted-foreground text-center">You do not have permission to view this page.</p>
+        <Button onClick={() => window.history.back()} className="mt-6 bg-highlight hover:bg-purple-700 text-primary-foreground">Go Back</Button>
       </div>
     );
   }
@@ -43,73 +44,63 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider> {/* Wrap the entire app with AuthProvider */}
+        <AuthProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            {/* Publicly accessible routes */}
             <Route
               path="/"
               element={
-                <ProtectedRoute>
-                  <Layout>
-                    <Dashboard />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <Dashboard />
+                </Layout>
               }
             />
             <Route
               path="/conflicts"
               element={
-                <ProtectedRoute>
-                  <Layout>
-                    <ConflictsPage />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <ConflictsPage />
+                </Layout>
               }
             />
             <Route
               path="/countries"
               element={
-                <ProtectedRoute>
-                  <Layout>
-                    <div className="text-foreground text-center text-2xl">Countries Page Placeholder</div>
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <div className="text-foreground text-center text-2xl">Countries Page Placeholder</div>
+                </Layout>
               }
             />
             <Route
               path="/violations"
               element={
-                <ProtectedRoute>
-                  <Layout>
-                    <div className="text-foreground text-center text-2xl">Violations Page Placeholder</div>
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <div className="text-foreground text-center text-2xl">Violations Page Placeholder</div>
+                </Layout>
               }
             />
             <Route
               path="/un-declarations"
               element={
-                <ProtectedRoute>
-                  <Layout>
-                    <div className="text-foreground text-center text-2xl">UN Declarations Page Placeholder</div>
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <div className="text-foreground text-center text-2xl">UN Declarations Page Placeholder</div>
+                </Layout>
               }
             />
             <Route
               path="/forum"
               element={
-                <ProtectedRoute>
-                  <Layout>
-                    <Forum />
-                  </Layout>
-                </ProtectedRoute>
+                <Layout>
+                  <Forum />
+                </Layout>
               }
             />
+            {/* Protected Admin route */}
             <Route
               path="/admin"
               element={
-                <ProtectedRoute allowedRoles={["admin"]}> {/* Only admin can access */}
+                <ProtectedRoute allowedRoles={["admin"]}>
                   <Layout>
                     <Admin />
                   </Layout>
