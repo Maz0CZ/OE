@@ -1,17 +1,43 @@
-// Add this import at the top
-import { useTheme } from "next-themes"
+import React from "react";
+import { useTheme } from "next-themes";
+import Header from "@/components/Header";
+import { Sidebar } from "@/components/Sidebar";
+import { MadeWithDyad } from "@/components/made-with-dyad"; // Assuming this is a footer component
 
-// Inside the Layout component, add this after the state declarations
-const { theme } = useTheme()
-const [mounted, setMounted] = React.useState(false)
-
-React.useEffect(() => {
-  setMounted(true)
-}, [])
-
-if (!mounted) {
-  return null
+interface LayoutProps {
+  children: React.ReactNode;
 }
 
-// Update the main div className to:
-<div className={`min-h-screen flex flex-col bg-background text-foreground ${theme === 'dark' ? 'dark' : ''}`}>
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null; // Render nothing until theme is mounted to prevent FOUC
+  }
+
+  return (
+    <div className={`min-h-screen flex flex-col bg-background text-foreground ${theme === 'dark' ? 'dark' : ''}`}>
+      <Header />
+      <div className="flex flex-1">
+        {/* Desktop Sidebar */}
+        <aside className="hidden lg:block w-64 border-r border-highlight/20 bg-sidebar-background p-4">
+          <Sidebar />
+        </aside>
+        {/* Main Content */}
+        <main className="flex-1 p-6 lg:p-8 overflow-auto">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
+      <MadeWithDyad />
+    </div>
+  );
+};
+
+export default Layout;
