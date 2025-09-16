@@ -14,14 +14,9 @@ import NotFound from "@/pages/NotFound";
 import CountriesPage from "./pages/CountriesPage";
 import ViolationsPage from "./pages/ViolationsPage";
 import UNDeclarationsPage from "./pages/UNDeclarationsPage";
-import { setupDatabase } from "@/lib/setupDatabase"; // Import the setupDatabase function
+
 
 function App() {
-  React.useEffect(() => {
-    // Call setupDatabase when the app mounts
-    setupDatabase();
-  }, []);
-
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <AuthProvider>

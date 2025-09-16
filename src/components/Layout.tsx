@@ -21,7 +21,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col bg-background text-foreground ${theme === 'dark' ? 'dark' : ''}`}>
+    <div className={`min-h-screen flex flex-col bg-background text-foreground`}>
       <Header />
       <div className="flex flex-1">
         {/* Desktop Sidebar */}
