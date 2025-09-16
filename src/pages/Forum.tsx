@@ -21,10 +21,10 @@ interface Post {
   moderation_status: "pending" | "approved" | "rejected";
   author_username: string; // From the view
   author_avatar_url?: string; // From the view
-  likes_count: number; // Aggregated count
-  dislikes_count: number; // Aggregated count
-  comments_count: number; // Aggregated count
-  user_reaction_type: 'like' | 'dislike' | null; // User's specific reaction
+  likes_count: number; // From the view
+  dislikes_count: number; // From the view
+  comments_count: number; // From the view
+  user_reaction_type: 'like' | 'dislike' | null; // User's specific reaction, fetched separately
 }
 
 const Forum: React.FC = () => {
@@ -36,38 +36,34 @@ const Forum: React.FC = () => {
   const { data: posts, isLoading, error } = useQuery<Post[]>({
     queryKey: ['forumPosts', currentUser?.id], // Add currentUser.id to queryKey for user-specific reactions
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('posts_with_profiles') // Query the new view
-        .select(`
-          *,
-          likes_count:post_reactions(count),
-          dislikes_count:post_reactions(count),
-          comments_count:comments(count),
-          user_reaction_type:post_reactions(type)
-        `)
+      const { data: postsData, error: postsError } = await supabase
+        .from('posts_with_aggregated_data') // Query the new view
+        .select('*')
         .eq('moderation_status', 'approved')
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (postsError) throw postsError;
 
-      // Manually process the data to get correct counts and user reaction
-      const processedData = data.map(post => {
-        const likes = post.likes_count.filter((r: any) => r.type === 'like').length > 0 ? post.likes_count[0].count : 0;
-        const dislikes = post.dislikes_count.filter((r: any) => r.type === 'dislike').length > 0 ? post.dislikes_count[0].count : 0;
-        
-        // Find the current user's reaction if available
-        const userReaction = post.user_reaction_type.find((r: any) => r.user_id === currentUser?.id);
-        
-        return {
-          ...post,
-          likes_count: likes,
-          dislikes_count: dislikes,
-          comments_count: post.comments_count[0]?.count || 0,
-          user_reaction_type: userReaction ? userReaction.type : null,
-        };
-      });
+      // For each post, fetch the current user's reaction separately
+      const postsWithReactions = await Promise.all(postsData.map(async (post) => {
+        let userReactionType: 'like' | 'dislike' | null = null;
+        if (currentUser?.id) {
+          const { data: userReactionData, error: userReactionError } = await supabase
+            .from('post_reactions')
+            .select('type')
+            .eq('post_id', post.id)
+            .eq('user_id', currentUser.id)
+            .single();
+          
+          if (userReactionError && userReactionError.code !== 'PGRST116') { // Ignore "no rows found" error
+            console.error("Error fetching user reaction:", userReactionError);
+          }
+          userReactionType = userReactionData?.type || null;
+        }
+        return { ...post, user_reaction_type: userReactionType };
+      }));
 
-      return processedData as Post[];
+      return postsWithReactions as Post[];
     }
   });
 
@@ -75,7 +71,6 @@ const Forum: React.FC = () => {
     mutationFn: async () => {
       if (!currentUser?.id) throw new Error("User not authenticated")
       
-      // Insert into the base 'posts' table, not the view
       const { data, error } = await supabase
         .from('posts')
         .insert({
@@ -225,11 +220,11 @@ const Forum: React.FC = () => {
               id={post.id}
               title={post.title}
               content={post.content}
-              author={post.author_username || "Unknown"} {/* Use author_username from view */}
+              author={post.author_username || "Unknown"}
               likes={post.likes_count}
               dislikes={post.dislikes_count}
               commentsCount={post.comments_count}
-              userReaction={post.user_reaction_type}
+              userReaction={post.user_reaction_type === 'like' ? 'liked' : (post.user_reaction_type === 'dislike' ? 'disliked' : null)}
               onLike={(id) => handleReaction(id, 'like')}
               onDislike={(id) => handleReaction(id, 'dislike')}
             />

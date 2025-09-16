@@ -18,6 +18,10 @@ interface Post {
   moderation_status: "pending" | "approved" | "rejected";
   author_username: string; // From the view
   author_avatar_url?: string; // From the view
+  likes_count: number; // From the view
+  dislikes_count: number; // From the view
+  comments_count: number; // From the view
+  user_reaction_type: 'like' | 'dislike' | null; // User's specific reaction, fetched separately
 }
 
 interface PostReaction {
@@ -28,67 +32,38 @@ const PostDetailPage: React.FC = () => {
   const { postId } = useParams<{ postId: string }>();
   const { currentUser, isAuthenticated } = useAuth();
 
-  // Fetch post details
+  // Fetch post details from the view
   const { data: post, isLoading: postLoading, error: postError, refetch: refetchPost } = useQuery<Post>({
-    queryKey: ['post', postId],
+    queryKey: ['post', postId, currentUser?.id], // Include currentUser.id for user-specific reaction
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('posts_with_profiles') // Query the new view
-        .select('*') // Select all columns from the view
+      if (!postId) throw new Error("Post ID is missing.");
+
+      const { data: postData, error: postFetchError } = await supabase
+        .from('posts_with_aggregated_data') // Query the new view
+        .select('*')
         .eq('id', postId)
         .single();
 
-      if (error) throw error;
-      return data as Post;
+      if (postFetchError) throw postFetchError;
+
+      let userReactionType: 'like' | 'dislike' | null = null;
+      if (currentUser?.id) {
+        const { data: userReactionData, error: userReactionError } = await supabase
+          .from('post_reactions')
+          .select('type')
+          .eq('post_id', postId)
+          .eq('user_id', currentUser.id)
+          .single();
+        
+        if (userReactionError && userReactionError.code !== 'PGRST116') { // Ignore "no rows found" error
+          console.error("Error fetching user reaction:", userReactionError);
+        }
+        userReactionType = userReactionData?.type || null;
+      }
+      
+      return { ...postData, user_reaction_type: userReactionType } as Post;
     },
     enabled: !!postId,
-  });
-
-  // Fetch likes count
-  const { data: likesCount, isLoading: likesLoading, error: likesError, refetch: refetchLikes } = useQuery<number>({
-    queryKey: ['postLikesCount', postId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('post_reactions')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', postId)
-        .eq('type', 'like');
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: !!postId,
-  });
-
-  // Fetch dislikes count
-  const { data: dislikesCount, isLoading: dislikesLoading, error: dislikesError, refetch: refetchDislikes } = useQuery<number>({
-    queryKey: ['postDislikesCount', postId],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('post_reactions')
-        .select('*', { count: 'exact', head: true })
-        .eq('post_id', postId)
-        .eq('type', 'dislike');
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: !!postId,
-  });
-
-  // Fetch user's reaction to this post
-  const { data: userReaction, isLoading: userReactionLoading, error: userReactionError, refetch: refetchUserReaction } = useQuery<PostReaction | null>({
-    queryKey: ['userPostReaction', postId, currentUser?.id],
-    queryFn: async () => {
-      if (!currentUser?.id) return null;
-      const { data, error } = await supabase
-        .from('post_reactions')
-        .select('type')
-        .eq('post_id', postId)
-        .eq('user_id', currentUser.id)
-        .single();
-      if (error && error.code !== 'PGRST116') throw error; // Ignore "no rows found" error
-      return data || null;
-    },
-    enabled: !!postId && isAuthenticated,
   });
 
   const handleReaction = async (type: 'like' | 'dislike') => {
@@ -98,7 +73,7 @@ const PostDetailPage: React.FC = () => {
     }
     if (!postId || !currentUser?.id) return;
 
-    const existingReaction = userReaction?.type;
+    const existingReaction = post?.user_reaction_type;
 
     if (existingReaction === type) {
       // User is un-reacting
@@ -123,12 +98,10 @@ const PostDetailPage: React.FC = () => {
         toast.success(`${type === 'like' ? 'Liked' : 'Disliked'} post!`);
       }
     }
-    refetchLikes();
-    refetchDislikes();
-    refetchUserReaction();
+    refetchPost(); // Refetch the post to update counts and user reaction
   };
 
-  if (postLoading || likesLoading || dislikesLoading || userReactionLoading) {
+  if (postLoading) {
     return (
       <div className="space-y-8 text-center">
         <h1 className="text-5xl font-extrabold text-foreground">Loading Post...</h1>
@@ -183,20 +156,20 @@ const PostDetailPage: React.FC = () => {
               variant="ghost"
               size="sm"
               onClick={() => handleReaction('like')}
-              className={`flex items-center gap-1 ${userReaction?.type === "like" ? "text-highlight" : "text-muted-foreground hover:text-highlight"}`}
+              className={`flex items-center gap-1 ${post.user_reaction_type === "like" ? "text-highlight" : "text-muted-foreground hover:text-highlight"}`}
             >
-              <ThumbsUp size={16} /> {likesCount}
+              <ThumbsUp size={16} /> {post.likes_count}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => handleReaction('dislike')}
-              className={`flex items-center gap-1 ${userReaction?.type === "dislike" ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
+              className={`flex items-center gap-1 ${post.user_reaction_type === "dislike" ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
             >
-              <ThumbsDown size={16} /> {dislikesCount}
+              <ThumbsDown size={16} /> {post.dislikes_count}
             </Button>
             <div className="flex items-center gap-1 text-muted-foreground">
-              <MessageCircle size={16} /> {/* Comments count will be displayed in CommentSection */}
+              <MessageCircle size={16} /> {post.comments_count}
             </div>
           </div>
         </CardFooter>
