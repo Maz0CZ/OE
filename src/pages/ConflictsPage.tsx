@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input"; // Import Input for search
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,12 +13,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { logActivity } from "@/utils/logger";
 import { useAuth } from "@/context/AuthContext";
 import ConflictDetailModal from "@/components/ConflictDetailModal";
+import { cn } from "@/lib/utils"; // Import cn for conditional class names
 
 interface Conflict {
   id: string;
@@ -31,6 +39,14 @@ interface Conflict {
   involved_parties: string[];
   lat: number | null;
   lon: number | null;
+}
+
+type SortKey = keyof Conflict | 'actions'; // 'actions' is a dummy key for non-sortable column
+type SortDirection = "asc" | "desc";
+
+interface SortConfig {
+  key: SortKey;
+  direction: SortDirection;
 }
 
 const getStatusBadgeVariant = (status: Conflict["status"]) => {
@@ -66,7 +82,12 @@ const ConflictsPage: React.FC = () => {
   const { currentUser } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [severityFilter, setSeverityFilter] = useState<string>("all");
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: "start_date", direction: "desc" });
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const { data: conflictsData, isLoading, error } = useQuery<Conflict[]>({
     queryKey: ['conflicts'],
@@ -101,11 +122,73 @@ const ConflictsPage: React.FC = () => {
     // In a real app, open a form to submit an update
   };
 
-  // Filter conflicts based on search term
-  const filteredConflicts = conflictsData?.filter(conflict =>
-    conflict.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conflict.region.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const requestSort = (key: SortKey) => {
+    let direction: SortDirection = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedAndFilteredConflicts = useMemo(() => {
+    let sortableItems = [...(conflictsData || [])];
+
+    // 1. Filter by search term
+    sortableItems = sortableItems.filter(conflict =>
+      conflict.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conflict.region.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // 2. Filter by status
+    if (statusFilter !== "all") {
+      sortableItems = sortableItems.filter(conflict => conflict.status === statusFilter);
+    }
+
+    // 3. Filter by severity
+    if (severityFilter !== "all") {
+      sortableItems = sortableItems.filter(conflict => conflict.severity === severityFilter);
+    }
+
+    // 4. Sort
+    if (sortConfig.key !== 'actions') { // Exclude 'actions' from sorting
+      sortableItems.sort((a, b) => {
+        const aValue = a[sortConfig.key as keyof Conflict];
+        const bValue = b[sortConfig.key as keyof Conflict];
+
+        if (aValue === null || aValue === undefined) return sortConfig.direction === "asc" ? 1 : -1;
+        if (bValue === null || bValue === undefined) return sortConfig.direction === "asc" ? -1 : 1;
+
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return sortConfig.direction === "asc"
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue);
+        }
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return sortConfig.direction === "asc"
+            ? aValue - bValue
+            : bValue - aValue;
+        }
+        // Fallback for other types or if comparison fails
+        return 0;
+      });
+    }
+
+    return sortableItems;
+  }, [conflictsData, searchTerm, statusFilter, severityFilter, sortConfig]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(sortedAndFilteredConflicts.length / itemsPerPage);
+  const currentConflicts = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedAndFilteredConflicts.slice(startIndex, endIndex);
+  }, [sortedAndFilteredConflicts, currentPage, itemsPerPage]);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -135,12 +218,38 @@ const ConflictsPage: React.FC = () => {
       <Card className="bg-card border-highlight/20 p-6">
         <CardHeader>
           <CardTitle className="text-2xl font-semibold text-foreground">Conflict List</CardTitle>
-          <Input
-            placeholder="Search by name or region..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="mt-2 bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
-          />
+          <div className="flex flex-col md:flex-row gap-4 mt-4">
+            <Input
+              placeholder="Search by name or region..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+            />
+            <Select onValueChange={setStatusFilter} value={statusFilter}>
+              <SelectTrigger className="w-full md:w-[180px] bg-secondary border-secondary-foreground text-primary-foreground">
+                <SelectValue placeholder="Filter by Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-highlight/20">
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="resolved">Resolved</SelectItem>
+                <SelectItem value="escalating">Escalating</SelectItem>
+                <SelectItem value="de-escalating">De-escalating</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select onValueChange={setSeverityFilter} value={severityFilter}>
+              <SelectTrigger className="w-full md:w-[180px] bg-secondary border-secondary-foreground text-primary-foreground">
+                <SelectValue placeholder="Filter by Severity" />
+              </SelectTrigger>
+              <SelectContent className="bg-card border-highlight/20">
+                <SelectItem value="all">All Severities</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border border-highlight/20 overflow-x-auto">
@@ -149,27 +258,47 @@ const ConflictsPage: React.FC = () => {
                 <TableRow className="bg-secondary hover:bg-secondary">
                   <TableHead className="text-highlight min-w-[80px]">ID</TableHead>
                   <TableHead className="text-highlight min-w-[150px]">
-                    <Button variant="ghost" className="p-0 h-auto">
-                      Name <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <Button variant="ghost" className="p-0 h-auto" onClick={() => requestSort("name")}>
+                      Name {sortConfig.key === "name" && <ArrowUpDown className={cn("ml-2 h-4 w-4", sortConfig.direction === "desc" ? "rotate-180" : "")} />}
                     </Button>
                   </TableHead>
-                  <TableHead className="text-highlight min-w-[120px]">Region</TableHead>
-                  <TableHead className="text-highlight min-w-[120px]">Status</TableHead>
-                  <TableHead className="text-highlight min-w-[120px]">Severity</TableHead>
-                  <TableHead className="text-highlight min-w-[120px]">Start Date</TableHead>
-                  <TableHead className="text-highlight text-right min-w-[120px]">Casualties</TableHead>
+                  <TableHead className="text-highlight min-w-[120px]">
+                    <Button variant="ghost" className="p-0 h-auto" onClick={() => requestSort("region")}>
+                      Region {sortConfig.key === "region" && <ArrowUpDown className={cn("ml-2 h-4 w-4", sortConfig.direction === "desc" ? "rotate-180" : "")} />}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-highlight min-w-[120px]">
+                    <Button variant="ghost" className="p-0 h-auto" onClick={() => requestSort("status")}>
+                      Status {sortConfig.key === "status" && <ArrowUpDown className={cn("ml-2 h-4 w-4", sortConfig.direction === "desc" ? "rotate-180" : "")} />}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-highlight min-w-[120px]">
+                    <Button variant="ghost" className="p-0 h-auto" onClick={() => requestSort("severity")}>
+                      Severity {sortConfig.key === "severity" && <ArrowUpDown className={cn("ml-2 h-4 w-4", sortConfig.direction === "desc" ? "rotate-180" : "")} />}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-highlight min-w-[120px]">
+                    <Button variant="ghost" className="p-0 h-auto" onClick={() => requestSort("start_date")}>
+                      Start Date {sortConfig.key === "start_date" && <ArrowUpDown className={cn("ml-2 h-4 w-4", sortConfig.direction === "desc" ? "rotate-180" : "")} />}
+                    </Button>
+                  </TableHead>
+                  <TableHead className="text-highlight text-right min-w-[120px]">
+                    <Button variant="ghost" className="p-0 h-auto" onClick={() => requestSort("casualties")}>
+                      Casualties {sortConfig.key === "casualties" && <ArrowUpDown className={cn("ml-2 h-4 w-4", sortConfig.direction === "desc" ? "rotate-180" : "")} />}
+                    </Button>
+                  </TableHead>
                   <TableHead className="text-highlight text-right min-w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredConflicts?.length === 0 ? (
+                {currentConflicts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">No conflicts found matching your search.</TableCell>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">No conflicts found matching your criteria.</TableCell>
                   </TableRow>
                 ) : (
-                  filteredConflicts?.map((conflict) => (
+                  currentConflicts.map((conflict) => (
                     <TableRow key={conflict.id} className="hover:bg-accent/20">
-                      <TableCell className="font-medium text-muted-foreground">{conflict.id}</TableCell>
+                      <TableCell className="font-medium text-muted-foreground">{conflict.id.substring(0, 8)}...</TableCell>
                       <TableCell className="text-foreground font-semibold">{conflict.name}</TableCell>
                       <TableCell className="text-muted-foreground">{conflict.region}</TableCell>
                       <TableCell>
@@ -178,7 +307,7 @@ const ConflictsPage: React.FC = () => {
                       <TableCell>
                         <Badge className={getSeverityBadgeColor(conflict.severity)}>{conflict.severity}</Badge>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{conflict.start_date}</TableCell>
+                      <TableCell className="text-muted-foreground">{new Date(conflict.start_date).toLocaleDateString()}</TableCell>
                       <TableCell className="text-foreground text-right">{conflict.casualties?.toLocaleString()}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -209,6 +338,31 @@ const ConflictsPage: React.FC = () => {
               </TableBody>
             </Table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-end space-x-2 py-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="border-highlight text-highlight hover:bg-highlight hover:text-primary-foreground"
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="border-highlight text-highlight hover:bg-highlight hover:text-primary-foreground"
+              >
+                Next <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
