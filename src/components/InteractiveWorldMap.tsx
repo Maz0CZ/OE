@@ -4,11 +4,11 @@ import {
   Geographies,
   Geography,
   Marker,
-  ZoomableGroup, // Import ZoomableGroup
+  ZoomableGroup,
 } from "react-simple-maps";
-import { MapPin, Globe } from "lucide-react"; // Added Globe icon for modal
+import { MapPin } from "lucide-react";
 import { feature } from "topojson-client";
-import ConflictDetailModal from "./ConflictDetailModal"; // Import the new modal component
+import ConflictDetailModal from "./ConflictDetailModal";
 
 interface ConflictLocation {
   id: string;
@@ -27,7 +27,7 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
   conflictLocations,
 }) => {
   const [geographyData, setGeographyData] = useState<any>(null);
-  const [position, setPosition] = useState({ coordinates: [0, 0], zoom: 1 }); // State for zoom and center
+  const [position, setPosition] = useState({ coordinates: [0, 0], zoom: 1 });
   const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -64,14 +64,14 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
 
   if (!geographyData) {
     return (
-      <div className="relative w-full h-96 bg-secondary rounded-lg overflow-hidden flex items-center justify-center">
+      <div className="relative w-full h-96 bg-secondary rounded-lg overflow-hidden flex items-center justify-center shadow-lg border border-highlight/20">
         <p className="text-muted-foreground">Loading map data...</p>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-96 bg-secondary rounded-lg overflow-hidden">
+    <div className="relative w-full h-96 bg-secondary rounded-lg overflow-hidden shadow-lg border border-highlight/20">
       <ComposableMap
         projectionConfig={{
           scale: 150,
@@ -83,6 +83,9 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
           zoom={position.zoom}
           center={position.coordinates}
           onMoveEnd={handleZoomableGroupMoveEnd}
+          minZoom={1} // Minimum zoom level
+          maxZoom={8} // Maximum zoom level
+          // translateExtent={[[0, 0], [1000, 500]]} // Optional: Restrict panning to a specific area if needed
         >
           <Geographies geography={geographyData}>
             {({ geographies }) =>
@@ -93,6 +96,7 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
                   fill="hsl(var(--muted))"
                   stroke="hsl(var(--muted-foreground))"
                   strokeWidth={0.5}
+                  className="transition-all duration-200 ease-in-out hover:fill-highlight/30"
                 />
               ))
             }
@@ -100,11 +104,11 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
           {conflictLocations.map(({ id, name, lat, lon }) => (
             <Marker key={id} coordinates={[lon, lat]} onClick={() => handleMarkerClick(id)}>
               <MapPin
-                size={20}
-                className="text-highlight drop-shadow-md cursor-pointer"
+                size={24}
+                className="text-highlight drop-shadow-md cursor-pointer hover:scale-125 transition-transform duration-200"
                 style={{ transform: "translate(-50%, -100%)" }}
               />
-              <title>{name}</title>
+              <title>{name}</title> {/* Tooltip on hover */}
             </Marker>
           ))}
         </ZoomableGroup>
