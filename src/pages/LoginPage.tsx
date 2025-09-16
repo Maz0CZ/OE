@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,21 +10,16 @@ import { toast } from "sonner";
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, isAuthenticated } = useAuth();
+  const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await login(email, password);
     if (success) {
-      navigate("/");
+      navigate("/"); // Redirect to dashboard on successful login
     }
   };
-
-  if (isAuthenticated) {
-    navigate("/");
-    return null;
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -63,8 +58,8 @@ const LoginPage: React.FC = () => {
                 required
               />
             </div>
-            <Button type="submit" className="w-full bg-highlight hover:bg-purple-700 text-primary-foreground">
-              Login
+            <Button type="submit" className="w-full bg-highlight hover:bg-purple-700 text-primary-foreground" disabled={isLoading}>
+              {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
           <p className="text-center text-sm text-muted-foreground mt-4">
@@ -72,6 +67,11 @@ const LoginPage: React.FC = () => {
             <Link to="/register" className="text-highlight hover:underline">
               Register here
             </Link>
+          </p>
+          <p className="text-center text-sm text-muted-foreground mt-2">
+            For testing: Use any email/password to register, then log in.
+            <br />
+            To set roles: Manually update `role` in Supabase `profiles` table.
           </p>
         </CardContent>
       </Card>

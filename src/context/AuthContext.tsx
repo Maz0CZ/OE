@@ -32,25 +32,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          await fetchUserProfile(session.user);
+        } else if (event === 'SIGNED_OUT') {
+          setCurrentUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    const getSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
       if (session?.user) {
         await fetchUserProfile(session.user);
       }
       setIsLoading(false);
     };
 
-    initializeAuth();
+    getSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        await fetchUserProfile(session.user);
-      } else if (event === 'SIGNED_OUT') {
-        setCurrentUser(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const fetchUserProfile = async (user: SupabaseUser) => {

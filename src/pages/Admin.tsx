@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import UserTable from "@/components/UserTable";
-import ModerationList, { ModerationPost as ModerationListItem } from "@/components/ModerationList"; // Import ModerationPost from ModerationList
+import ModerationList from "@/components/ModerationList";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,21 +11,20 @@ import { supabase } from "@/lib/supabaseClient";
 interface UserProfile {
   id: string;
   username: string;
-  email: string;
+  email: string; // Assuming email can be fetched or derived
   role: "admin" | "moderator" | "reporter" | "user" | "guest";
-  status: "active" | "banned";
+  status: "active" | "banned"; // Added status to profile
 }
 
-// Raw data type from Supabase for moderation posts
-interface RawSupabaseModerationPost {
+interface ModerationPost {
   id: string;
   title: string;
-  content: string;
   author_id: string;
+  content: string;
   moderation_status: "pending" | "approved" | "rejected";
-  profiles: Array<{
+  profiles: {
     username: string;
-  }> | null; // Changed to array
+  };
 }
 
 interface SystemLog {
@@ -46,50 +45,35 @@ const Admin: React.FC = () => {
     queryFn: async () => {
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, username, role, status, auth_users:id(email)');
+        .select('id, username, role, status, auth_users:id(email)'); // Join with auth.users to get email
 
       if (profilesError) throw profilesError;
 
-      // Define a type for the raw data from Supabase to correctly infer auth_users
-      type RawProfileData = {
-        id: string;
-        username: string;
-        role: "admin" | "moderator" | "reporter" | "user" | "guest";
-        status: "active" | "banned";
-        auth_users: Array<{ email: string }> | null; // Changed to array
-      };
-
-      return (profilesData as RawProfileData[]).map(profile => ({
+      // Map to UserProfile, assuming 'status' is now on profiles table
+      return profilesData.map(profile => ({
         id: profile.id,
         username: profile.username,
-        email: profile.auth_users?.[0]?.email || 'N/A', // Access first element of array
+        email: profile.auth_users?.email || 'N/A', // Get email from auth.users
         role: profile.role,
-        status: profile.status || 'active',
+        status: profile.status || 'active', // Default to active if not set
       })) as UserProfile[];
     },
-    enabled: isAdmin,
+    enabled: isAdmin, // Only fetch if user is admin
   });
 
   // Fetch moderation posts
-  const { data: moderationPosts, isLoading: postsLoading, error: postsError } = useQuery<ModerationListItem[]>({
+  const { data: moderationPosts, isLoading: postsLoading, error: postsError } = useQuery<ModerationPost[]>({
     queryKey: ['moderationPosts'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('posts')
         .select('id, title, content, author_id, moderation_status, profiles(username)')
-        .eq('moderation_status', 'pending');
+        .eq('moderation_status', 'pending'); // Filter for pending moderation posts
 
       if (error) throw error;
-      
-      // Map raw data to ModerationListItem type expected by ModerationList component
-      return (data as RawSupabaseModerationPost[]).map(post => ({
-        id: post.id,
-        title: post.title,
-        author: post.profiles?.[0]?.username || 'Unknown', // Access first element of array
-        content: post.content,
-      })) as ModerationListItem[];
+      return data as ModerationPost[];
     },
-    enabled: isAdmin || isModerator,
+    enabled: isAdmin || isModerator, // Only fetch if user is admin or moderator
   });
 
   // Fetch system logs
@@ -104,7 +88,7 @@ const Admin: React.FC = () => {
       if (error) throw error;
       return data as SystemLog[];
     },
-    enabled: isAdmin,
+    enabled: isAdmin, // Only fetch if user is admin
   });
 
   // Helper to log activity to Supabase
@@ -164,7 +148,7 @@ const Admin: React.FC = () => {
     },
     onSuccess: (data, postId) => {
       queryClient.invalidateQueries({ queryKey: ['moderationPosts'] });
-      queryClient.invalidateQueries({ queryKey: ['forumPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['forumPosts'] }); // Also invalidate forum posts
       logActivity(`Post '${postId}' deleted by ${currentUser?.username}.`, 'warning');
       toast.success(`Post ${postId} has been deleted.`);
     },
@@ -235,7 +219,7 @@ const Admin: React.FC = () => {
               <ModerationList
                 posts={moderationPosts || []}
                 onDeletePost={(id) => deletePostMutation.mutate(id)}
-                onReviewPost={(id) => reviewPostMutation.mutate({ postId: id, status: 'approved' })}
+                onReviewPost={(id) => reviewPostMutation.mutate({ postId: id, status: 'approved' })} // Example: approve on review
               />
             </CardContent>
           </Card>
@@ -247,7 +231,7 @@ const Admin: React.FC = () => {
         </Card>
       )}
 
-      {isAdmin && (
+      {isAdmin && ( // Only show system logs to admins
         <Card className="bg-card border-highlight/20 p-6">
           <CardHeader>
             <CardTitle className="text-2xl font-semibold text-foreground">System Logs</CardTitle>
