@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   ComposableMap,
   Geographies,
   Geography,
-  Marker
-} from 'react-simple-maps';
-import { MapPin } from 'lucide-react';
+  Marker,
+} from "react-simple-maps";
+import { MapPin } from "lucide-react";
+import { feature } from "topojson-client";
 
 interface ConflictLocation {
   id: string;
@@ -18,30 +19,37 @@ interface InteractiveWorldMapProps {
   conflictLocations: ConflictLocation[];
 }
 
-// Using a reliable TopoJSON source from Natural Earth
-const geoUrl = 'https://raw.githubusercontent.com/zcreativelabs/react-simple-maps/master/topojson-maps/world-110m.json';
+// Updated to a reliable TopoJSON source from unpkg
+const geoUrl = "https://unpkg.com/world-atlas@2.0.2/countries-110m.json";
 
 const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
-  conflictLocations
+  conflictLocations,
 }) => {
-  const [geographies, setGeographies] = useState<any>(null);
+  const [geographyData, setGeographyData] = useState<any>(null);
 
   useEffect(() => {
     fetch(geoUrl)
-      .then(response => response.json())
-      .then(data => {
-        // Extract the countries feature from the TopoJSON
-        setGeographies(data.objects.countries);
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
       })
-      .catch(error => {
-        console.error('Error loading map data:', error);
+      .then((topology) => {
+        // Use topojson-client to extract the 'countries' feature
+        const countries = feature(topology, topology.objects.countries);
+        setGeographyData(countries);
+      })
+      .catch((error) => {
+        console.error("Error fetching or processing geography data:", error);
+        // In a real app, you might want to show a toast notification here
       });
   }, []);
 
-  if (!geographies) {
+  if (!geographyData) {
     return (
       <div className="relative w-full h-96 bg-secondary rounded-lg overflow-hidden flex items-center justify-center">
-        <p className="text-muted-foreground">Loading map...</p>
+        <p className="text-muted-foreground">Loading map data...</p>
       </div>
     );
   }
@@ -51,12 +59,13 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
       <ComposableMap
         projectionConfig={{
           scale: 150,
-          center: [0, 0]
+          center: [0, 0], // Center the map
         }}
+        className="w-full h-full"
       >
-        <Geographies geography={geographies}>
-          {({ geographies: geoFeatures }) =>
-            geoFeatures.map(geo => (
+        <Geographies geography={geographyData}>
+          {({ geographies }) =>
+            geographies.map((geo) => (
               <Geography
                 key={geo.rsmKey}
                 geography={geo}
