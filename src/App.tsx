@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { AuthProvider, useAuth } from "@/context/AuthContext"; // Added useAuth import
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import ConflictsPage from "@/pages/ConflictsPage";
@@ -27,7 +27,8 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
-  if (!isAuthenticated) {
+  // Only redirect to login if not authenticated AND not already on login page
+  if (!isAuthenticated && window.location.pathname !== '/login') {
     return <Navigate to="/login" replace />;
   }
 
