@@ -5,7 +5,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { MadeWithDyad } from "@/components/made-with-dyad"; // Assuming this is a footer component
 
 interface LayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode; // Made children optional
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
