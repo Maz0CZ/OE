@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { LogOut, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "@/components/Sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar components
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const Header: React.FC = () => {
   const { isAuthenticated, currentUser, logout } = useAuth();
@@ -45,19 +45,27 @@ const Header: React.FC = () => {
                 <AvatarImage src={currentUser.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.username}`} alt={currentUser.username} />
                 <AvatarFallback>{currentUser.username.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={logout} 
+                className="text-muted-foreground hover:text-destructive"
+                title="Logout"
+              >
+                <LogOut className="h-5 w-5" />
+                <span className="sr-only">Logout</span>
+              </Button>
             </>
-          ) : null}
-          <ThemeToggle />
-          {isAuthenticated ? (
-            <Button variant="ghost" size="icon" onClick={logout} className="text-muted-foreground hover:text-destructive">
-              <LogOut className="h-5 w-5" />
-              <span className="sr-only">Logout</span>
-            </Button>
           ) : (
-            <Button asChild variant="outline" className="border-highlight text-highlight hover:bg-highlight hover:text-primary-foreground">
+            <Button 
+              asChild 
+              variant="outline" 
+              className="border-highlight text-highlight hover:bg-highlight hover:text-primary-foreground"
+            >
               <Link to="/login">Login</Link>
             </Button>
           )}
+          <ThemeToggle />
         </div>
       </div>
     </header>
