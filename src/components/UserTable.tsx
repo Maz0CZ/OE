@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 interface User {
   id: string;
-  name: string;
+  username: string; // Changed from 'name' to 'username'
   email: string;
   status: "active" | "banned";
 }
@@ -23,7 +23,7 @@ const UserTable: React.FC<UserTableProps> = ({ users, onBanUser, onUnbanUser }) 
         <TableHeader>
           <TableRow className="bg-secondary hover:bg-secondary">
             <TableHead className="text-highlight">ID</TableHead>
-            <TableHead className="text-highlight">Name</TableHead>
+            <TableHead className="text-highlight">Username</TableHead> {/* Changed to Username */}
             <TableHead className="text-highlight">Email</TableHead>
             <TableHead className="text-highlight">Status</TableHead>
             <TableHead className="text-highlight text-right">Actions</TableHead>
@@ -33,7 +33,7 @@ const UserTable: React.FC<UserTableProps> = ({ users, onBanUser, onUnbanUser }) 
           {users.map((user) => (
             <TableRow key={user.id} className="hover:bg-accent/20">
               <TableCell className="font-medium text-muted-foreground">{user.id}</TableCell>
-              <TableCell className="text-foreground">{user.name}</TableCell>
+              <TableCell className="text-foreground">{user.username}</TableCell> {/* Changed to user.username */}
               <TableCell className="text-muted-foreground">{user.email}</TableCell>
               <TableCell>
                 <span className={`px-2 py-1 rounded-full text-xs font-semibold ${

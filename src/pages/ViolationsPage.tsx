@@ -64,7 +64,7 @@ const ViolationsPage = () => {
           <p className="text-muted-foreground text-center col-span-full">No violations found. Add some in Supabase!</p>
         ) : (
           violations?.map((violation) => (
-            <Card key={vi.id} className="bg-card border-highlight/20 hover:border-highlight transition-colors flex flex-col">
+            <Card key={violation.id} className="bg-card border-highlight/20 hover:border-highlight transition-colors flex flex-col"> {/* Fix: Changed 'vi.id' to 'violation.id' */}
               <CardHeader>
                 <CardTitle className="text-xl font-semibold text-foreground">{violation.type}</CardTitle>
                 <p className="text-sm text-muted-foreground">{violation.location} - {new Date(violation.date).toLocaleDateString()}</p>

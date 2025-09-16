@@ -17,7 +17,7 @@ interface UserProfile {
   status: "active" | "banned"; // Added status to profile
 }
 
-interface ModerationPost {
+interface ModerationPostData { // Interface for data fetched from Supabase
   id: string;
   title: string;
   author_id: string;
@@ -25,7 +25,14 @@ interface ModerationPost {
   moderation_status: "pending" | "approved" | "rejected";
   profiles: {
     username: string;
-  };
+  } | null; // profiles can be null if not found
+}
+
+interface ModerationPostForList { // Interface for data passed to ModerationList component
+  id: string;
+  title: string;
+  author_username: string;
+  content: string;
 }
 
 interface SystemLog {
@@ -53,11 +60,11 @@ const Admin: React.FC = () => {
         throw profilesError;
       }
 
-      // Map to UserProfile, assuming 'status' is now on profiles table
+      // Map to UserProfile, accessing email correctly from the array
       return profilesData.map(profile => ({
         id: profile.id,
         username: profile.username,
-        email: profile.auth_users?.email || 'N/A', // Get email from auth.users
+        email: profile.auth_users?.[0]?.email || 'N/A', // Fix: Access email from the first element of the array
         role: profile.role,
         status: profile.status || 'active', // Default to active if not set
       })) as UserProfile[];
@@ -66,7 +73,7 @@ const Admin: React.FC = () => {
   });
 
   // Fetch moderation posts
-  const { data: moderationPosts, isLoading: postsLoading, error: postsError } = useQuery<ModerationPost[]>({
+  const { data: moderationPosts, isLoading: postsLoading, error: postsError } = useQuery<ModerationPostForList[]>({
     queryKey: ['moderationPosts'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -78,7 +85,13 @@ const Admin: React.FC = () => {
         logActivity(`Error fetching moderation posts: ${error.message}`, 'error', currentUser?.id);
         throw error;
       }
-      return data as ModerationPost[];
+      // Map fetched data to the format expected by ModerationList
+      return (data as ModerationPostData[]).map(post => ({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        author_username: post.profiles?.username || "Unknown", // Provide author_username
+      }));
     },
     enabled: isAdmin || isModerator, // Only fetch if user is admin or moderator
   });

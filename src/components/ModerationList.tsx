@@ -7,7 +7,7 @@ import { toast } from "sonner";
 interface ModerationPost {
   id: string;
   title: string;
-  author: string;
+  author_username: string; // Changed from 'author' to 'author_username'
   content: string;
 }
 
@@ -27,7 +27,7 @@ const ModerationList: React.FC<ModerationListProps> = ({ posts, onDeletePost, on
           <Card key={post.id} className="bg-secondary border-highlight/10">
             <CardHeader>
               <CardTitle className="text-xl font-semibold text-foreground">{post.title}</CardTitle>
-              <p className="text-sm text-muted-foreground">by {post.author}</p>
+              <p className="text-sm text-muted-foreground">by {post.author_username}</p> {/* Changed to post.author_username */}
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground line-clamp-2">{post.content}</p>
