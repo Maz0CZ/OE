@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabaseClient"; // Import Supabase client
+import { supabase } from "@/lib/supabaseClient";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 
 export type UserRole = "admin" | "moderator" | "reporter" | "user" | "guest";
@@ -9,7 +9,7 @@ interface UserProfile {
   id: string;
   username: string;
   role: UserRole;
-  avatar_url?: string; // Added avatar_url
+  avatar_url?: string;
 }
 
 interface AuthContextType {
@@ -42,7 +42,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Initial check for session
     const getSession = async () => {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (session?.user) {
@@ -64,44 +63,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserProfile = async (user: SupabaseUser) => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("username, role, avatar_url") // Select avatar_url
+      .select("username, role, avatar_url")
       .eq("id", user.id)
       .single();
 
     if (error) {
       console.error("Error fetching user profile:", error.message);
-      // If profile not found, create a default one (e.g., for new registrations)
-      if (error.code === "PGRST116") { // No rows found
-        const defaultProfile: UserProfile = {
-          id: user.id,
-          username: user.email?.split("@")[0] || "New User",
-          role: "user",
-          avatar_url: undefined, // Default avatar_url
-        };
-        const { error: insertError } = await supabase.from("profiles").insert({
-          id: user.id,
-          username: defaultProfile.username,
-          role: defaultProfile.role,
-          avatar_url: defaultProfile.avatar_url,
-        });
-        if (insertError) {
-          console.error("Error creating default profile:", insertError.message);
-          toast.error("Failed to create user profile.");
-          setCurrentUser(null);
-          return;
-        }
-        setCurrentUser(defaultProfile);
-        toast.success(`Welcome, ${defaultProfile.username}!`);
-        return;
-      }
-      setCurrentUser(null);
       return;
     }
 
     if (data) {
       setCurrentUser({ id: user.id, ...data });
-    } else {
-      setCurrentUser(null);
     }
   };
 
@@ -124,7 +96,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (email: string, password: string, username: string): Promise<boolean> => {
     setIsLoading(true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: {
+          username,
+          role: 'user'
+        }
+      }
+    });
     setIsLoading(false);
 
     if (error) {
@@ -133,23 +114,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     if (data.user) {
-      // Insert into profiles table
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: data.user.id,
-        username: username,
-        role: "user", // Default role for new registrations
-        avatar_url: null, // Default avatar_url
-      });
-
-      if (profileError) {
-        console.error("Error creating user profile:", profileError.message);
-        toast.error("Registration successful, but failed to create user profile. Please contact support.");
-        // Optionally, you might want to delete the auth user here if profile creation fails
-        // await supabase.auth.admin.deleteUser(data.user.id); // This would require admin privileges or a server function
-        return false;
-      }
-
-      await fetchUserProfile(data.user);
       toast.success("Registration successful! Welcome to OpenEyes.");
       return true;
     }
