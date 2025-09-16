@@ -4,9 +4,11 @@ import {
   Geographies,
   Geography,
   Marker,
+  ZoomableGroup, // Import ZoomableGroup
 } from "react-simple-maps";
-import { MapPin } from "lucide-react";
+import { MapPin, Globe } from "lucide-react"; // Added Globe icon for modal
 import { feature } from "topojson-client";
+import ConflictDetailModal from "./ConflictDetailModal"; // Import the new modal component
 
 interface ConflictLocation {
   id: string;
@@ -19,13 +21,15 @@ interface InteractiveWorldMapProps {
   conflictLocations: ConflictLocation[];
 }
 
-// Updated to a reliable TopoJSON source from unpkg
 const geoUrl = "https://unpkg.com/world-atlas@2.0.2/countries-110m.json";
 
 const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
   conflictLocations,
 }) => {
   const [geographyData, setGeographyData] = useState<any>(null);
+  const [position, setPosition] = useState({ coordinates: [0, 0], zoom: 1 }); // State for zoom and center
+  const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetch(geoUrl)
@@ -36,15 +40,27 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
         return response.json();
       })
       .then((topology) => {
-        // Use topojson-client to extract the 'countries' feature
         const countries = feature(topology, topology.objects.countries);
         setGeographyData(countries);
       })
       .catch((error) => {
         console.error("Error fetching or processing geography data:", error);
-        // In a real app, you might want to show a toast notification here
       });
   }, []);
+
+  const handleZoomableGroupMoveEnd = (position: { coordinates: [number, number]; zoom: number }) => {
+    setPosition(position);
+  };
+
+  const handleMarkerClick = (conflictId: string) => {
+    setSelectedConflictId(conflictId);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedConflictId(null);
+  };
 
   if (!geographyData) {
     return (
@@ -59,34 +75,46 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
       <ComposableMap
         projectionConfig={{
           scale: 150,
-          center: [0, 0], // Center the map
+          center: [0, 0],
         }}
         className="w-full h-full"
       >
-        <Geographies geography={geographyData}>
-          {({ geographies }) =>
-            geographies.map((geo) => (
-              <Geography
-                key={geo.rsmKey}
-                geography={geo}
-                fill="hsl(var(--muted))"
-                stroke="hsl(var(--muted-foreground))"
-                strokeWidth={0.5}
+        <ZoomableGroup
+          zoom={position.zoom}
+          center={position.coordinates}
+          onMoveEnd={handleZoomableGroupMoveEnd}
+        >
+          <Geographies geography={geographyData}>
+            {({ geographies }) =>
+              geographies.map((geo) => (
+                <Geography
+                  key={geo.rsmKey}
+                  geography={geo}
+                  fill="hsl(var(--muted))"
+                  stroke="hsl(var(--muted-foreground))"
+                  strokeWidth={0.5}
+                />
+              ))
+            }
+          </Geographies>
+          {conflictLocations.map(({ id, name, lat, lon }) => (
+            <Marker key={id} coordinates={[lon, lat]} onClick={() => handleMarkerClick(id)}>
+              <MapPin
+                size={20}
+                className="text-highlight drop-shadow-md cursor-pointer"
+                style={{ transform: "translate(-50%, -100%)" }}
               />
-            ))
-          }
-        </Geographies>
-        {conflictLocations.map(({ id, name, lat, lon }) => (
-          <Marker key={id} coordinates={[lon, lat]}>
-            <MapPin
-              size={20}
-              className="text-highlight drop-shadow-md"
-              style={{ transform: "translate(-50%, -100%)" }}
-            />
-            <title>{name}</title>
-          </Marker>
-        ))}
+              <title>{name}</title>
+            </Marker>
+          ))}
+        </ZoomableGroup>
       </ComposableMap>
+
+      <ConflictDetailModal
+        conflictId={selectedConflictId}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+      />
     </div>
   );
 };
