@@ -3,6 +3,7 @@ import MetricCard from "@/components/MetricCard";
 import { Swords, TriangleAlert, Building, CircleDot } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import WorldMap from "@/components/WorldMap"; // Import the new WorldMap component
 
 const data = [
   { name: "Critical", value: 300, color: "#ef4444" }, // Red
@@ -11,12 +12,21 @@ const data = [
   { name: "Low", value: 400, color: "#4b5563" }, // Darker Gray
 ];
 
+// Mock conflict locations for the map
+const mockConflictLocations = [
+  { id: "loc1", name: "Syria", lat: 34.8021, lon: 38.9968 },
+  { id: "loc2", name: "Ukraine", lat: 48.3794, lon: 31.1656 },
+  { id: "loc3", name: "Yemen", lat: 15.5527, lon: 48.5164 },
+  { id: "loc4", name: "Sahel Region", lat: 17.6078, lon: 8.0817 },
+  { id: "loc5", name: "Ethiopia", lat: 9.145, lon: 40.4897 },
+  { id: "loc6", name: "Myanmar", lat: 21.9139, lon: 95.9562 },
+];
+
 const Dashboard: React.FC = () => {
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-5xl font-extrabold text-foreground">Global Overview</h1>
-        {/* Removed: <p className="text-lg text-muted-foreground">Real-time monitoring of conflicts and human rights violations worldwide</p> */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -25,6 +35,15 @@ const Dashboard: React.FC = () => {
         <MetricCard icon={<Building size={48} />} value={49} label="UN Declarations" />
         <MetricCard icon={<CircleDot size={48} className="text-red-500" />} value={1} label="Critical Severity" />
       </div>
+
+      <Card className="bg-card border-highlight/20 p-6">
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold text-foreground">Global Conflict Map</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <WorldMap conflictLocations={mockConflictLocations} />
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 bg-card border-highlight/20">
