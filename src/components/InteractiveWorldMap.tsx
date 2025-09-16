@@ -19,7 +19,7 @@ interface InteractiveWorldMapProps {
 }
 
 const geoUrl =
-  "https://raw.githubusercontent.com/deldersveld/topojson/master/world-countries.json";
+  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"; // Updated URL
 
 const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
   conflictLocations,
