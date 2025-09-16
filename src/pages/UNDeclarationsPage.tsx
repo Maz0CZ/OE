@@ -1,0 +1,1 @@
+// Similar structure to CountriesPage but for UN declarations
