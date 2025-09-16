@@ -15,7 +15,8 @@ import CountriesPage from "./pages/CountriesPage";
 import ViolationsPage from "./pages/ViolationsPage";
 import UNDeclarationsPage from "./pages/UNDeclarationsPage";
 import PostDetailPage from "./pages/PostDetailPage";
-import ProfilePage from "./pages/ProfilePage"; // Import the new ProfilePage
+import ProfilePage from "./pages/ProfilePage";
+import WikipediaDataImporter from "./pages/WikipediaDataImporter"; // Import the new page
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -108,10 +109,18 @@ function App() {
                 }
               />
               <Route
-                path="/profile" // New route for ProfilePage
+                path="/profile"
                 element={
                   <Layout>
                     <ProfilePage />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/data-import" // New route for Wikipedia Data Importer
+                element={
+                  <Layout>
+                    <WikipediaDataImporter />
                   </Layout>
                 }
               />

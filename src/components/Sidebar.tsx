@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Swords, ShieldAlert, Landmark, Users, MessageSquareText, Globe } from "lucide-react";
+import { LayoutDashboard, Swords, ShieldAlert, Landmark, Users, MessageSquareText, Globe, BookOpen } from "lucide-react"; // Added BookOpen icon
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
@@ -49,6 +49,12 @@ export const Sidebar: React.FC = () => {
       href: "/admin",
       icon: <Users className="h-5 w-5" />,
       roles: ["admin", "moderator"], // Only visible to admins and moderators
+    },
+    {
+      name: "Data Importer", // New item for Wikipedia Data Importer
+      href: "/data-import",
+      icon: <BookOpen className="h-5 w-5" />,
+      roles: ["admin"], // Only visible to admins
     },
   ];
 
