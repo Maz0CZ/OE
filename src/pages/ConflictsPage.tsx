@@ -2,7 +2,7 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, MoreHorizontal, ExternalLink } from "lucide-react"; // Added ExternalLink icon
+import { ArrowUpDown, MoreHorizontal } from "lucide-react"; // Removed ExternalLink icon as wikipedia_url is removed
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,8 +15,8 @@ import {
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
-import { logActivity } from "@/utils/logger"; // Import the new logger
-import { useAuth } from "@/context/AuthContext"; // Import useAuth to get currentUser
+import { logActivity } from "@/utils/logger";
+import { useAuth } from "@/context/AuthContext";
 
 interface Conflict {
   id: string;
@@ -29,10 +29,7 @@ interface Conflict {
   involved_parties: string[];
   lat: number | null;
   lon: number | null;
-  summary: string | null; // New field
-  wikipedia_url: string | null; // New field
-  conflict_type: string | null; // New field
-  countries_involved: string[] | null; // New field
+  // Removed: summary, wikipedia_url, conflict_type, countries_involved
 }
 
 const getStatusBadgeVariant = (status: Conflict["status"]) => {
@@ -40,11 +37,10 @@ const getStatusBadgeVariant = (status: Conflict["status"]) => {
     case "active":
       return "default";
     case "resolved":
+    case "de-escalating": // Group de-escalating with resolved for now
       return "secondary";
     case "escalating":
       return "destructive";
-    case "de-escalating":
-      return "outline";
     default:
       return "default";
   }
@@ -66,13 +62,13 @@ const getSeverityBadgeColor = (severity: Conflict["severity"]) => {
 };
 
 const ConflictsPage: React.FC = () => {
-  const { currentUser } = useAuth(); // Get currentUser for logging
+  const { currentUser } = useAuth();
   const { data: conflictsData, isLoading, error } = useQuery<Conflict[]>({
     queryKey: ['conflicts'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('conflicts')
-        .select('*, lat, lon, summary, wikipedia_url, conflict_type, countries_involved') // Select new columns
+        .select('id, name, region, status, severity, start_date, casualties, involved_parties, lat, lon') // Removed non-existent columns
         .order('start_date', { ascending: false });
 
       if (error) {
@@ -86,7 +82,7 @@ const ConflictsPage: React.FC = () => {
   const handleViewDetails = (conflictId: string) => {
     toast.info(`Viewing details for conflict: ${conflictId}`);
     logActivity(`User viewed details for conflict: ${conflictId}`, 'info', currentUser?.id);
-    // In a real app, navigate to a detailed conflict page
+    // In a real app, navigate to a detailed conflict page or open a modal
   };
 
   const handleReportUpdate = (conflictId: string) => {
@@ -117,7 +113,7 @@ const ConflictsPage: React.FC = () => {
     <div className="space-y-8">
       <h1 className="text-5xl font-extrabold text-foreground text-center">Global Conflicts</h1>
       <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto">
-        Overview of ongoing and historical conflicts worldwide, sourced from various data points including Wikipedia.
+        Overview of ongoing and historical conflicts worldwide.
       </p>
 
       <Card className="bg-card border-highlight/20 p-6">
@@ -135,7 +131,7 @@ const ConflictsPage: React.FC = () => {
                       Name <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                   </TableHead>
-                  <TableHead className="text-highlight min-w-[120px]">Type</TableHead> {/* New column */}
+                  {/* Removed Type column */}
                   <TableHead className="text-highlight min-w-[120px]">Region</TableHead>
                   <TableHead className="text-highlight min-w-[120px]">Status</TableHead>
                   <TableHead className="text-highlight min-w-[120px]">Severity</TableHead>
@@ -147,14 +143,14 @@ const ConflictsPage: React.FC = () => {
               <TableBody>
                 {conflictsData?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground">No conflicts found. Add some in Supabase!</TableCell>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">No conflicts found. Add some in Supabase!</TableCell>
                   </TableRow>
                 ) : (
                   conflictsData?.map((conflict) => (
                     <TableRow key={conflict.id} className="hover:bg-accent/20">
                       <TableCell className="font-medium text-muted-foreground">{conflict.id}</TableCell>
                       <TableCell className="text-foreground font-semibold">{conflict.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{conflict.conflict_type || 'N/A'}</TableCell> {/* Display new column */}
+                      {/* Removed Type cell */}
                       <TableCell className="text-muted-foreground">{conflict.region}</TableCell>
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(conflict.status)}>{conflict.status}</Badge>
@@ -177,13 +173,7 @@ const ConflictsPage: React.FC = () => {
                             <DropdownMenuItem onClick={() => handleViewDetails(conflict.id)} className="hover:bg-accent hover:text-accent-foreground">
                               View Details
                             </DropdownMenuItem>
-                            {conflict.wikipedia_url && ( // Conditionally render Wikipedia link
-                              <DropdownMenuItem asChild className="hover:bg-accent hover:text-accent-foreground">
-                                <a href={conflict.wikipedia_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
-                                  <ExternalLink className="mr-2 h-4 w-4" /> Wikipedia
-                                </a>
-                              </DropdownMenuItem>
-                            )}
+                            {/* Removed Wikipedia link */}
                             <DropdownMenuItem onClick={() => handleReportUpdate(conflict.id)} className="hover:bg-accent hover:text-accent-foreground">
                               Report Update
                             </DropdownMenuItem>

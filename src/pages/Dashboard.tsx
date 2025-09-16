@@ -3,19 +3,20 @@ import MetricCard from "@/components/MetricCard";
 import { Swords, TriangleAlert, Building, CircleDot } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import InteractiveWorldMap from "@/components/InteractiveWorldMap"; // Ensure this is imported
+import InteractiveWorldMap from "@/components/InteractiveWorldMap";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
-import { logActivity } from "@/utils/logger"; // Import the new logger
-import { useAuth } from "@/context/AuthContext"; // Import useAuth to get currentUser
+import { logActivity } from "@/utils/logger";
+import { useAuth } from "@/context/AuthContext";
 
 interface ConflictSummary {
-  id: string; // Added id for map markers
-  name: string; // Added name for map markers
+  id: string;
+  name: string;
   status: string;
   severity: string;
   lat: number | null;
   lon: number | null;
+  // Removed: summary, wikipedia_url, conflict_type, countries_involved
 }
 
 interface ConflictLocation {
@@ -26,7 +27,7 @@ interface ConflictLocation {
 }
 
 const Dashboard: React.FC = () => {
-  const { currentUser } = useAuth(); // Get currentUser for logging
+  const { currentUser } = useAuth();
 
   // Fetch all conflicts for metrics, pie chart, and map
   const { data: allConflicts, isLoading: conflictsLoading, error: conflictsError } = useQuery<ConflictSummary[]>({
@@ -34,7 +35,7 @@ const Dashboard: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('conflicts')
-        .select('id, name, status, severity, lat, lon'); // Select id and name for map markers
+        .select('id, name, status, severity, lat, lon'); // Removed non-existent columns
 
       if (error) {
         logActivity(`Error fetching all conflicts summary: ${error.message}`, 'error', currentUser?.id);
@@ -46,7 +47,7 @@ const Dashboard: React.FC = () => {
 
   // Filter conflict locations for the map
   const conflictLocations: ConflictLocation[] = (allConflicts || [])
-    .filter(c => c.lat !== null && c.lon !== null && c.id && c.name) // Ensure id and name exist
+    .filter(c => c.lat !== null && c.lon !== null && c.id && c.name)
     .map(c => ({
       id: c.id,
       name: c.name,
@@ -111,7 +112,7 @@ const Dashboard: React.FC = () => {
         .from('logs')
         .select('id, message, created_at')
         .order('created_at', { ascending: false })
-        .limit(5); // Get only the 5 most recent logs
+        .limit(5);
 
       if (error) {
         logActivity(`Error fetching recent logs: ${error.message}`, 'error', currentUser?.id);
@@ -157,7 +158,7 @@ const Dashboard: React.FC = () => {
           <CardTitle className="text-2xl font-semibold text-foreground">Global Conflict Map</CardTitle>
         </CardHeader>
         <CardContent>
-          <InteractiveWorldMap conflictLocations={conflictLocations} /> {/* Use InteractiveWorldMap */}
+          <InteractiveWorldMap conflictLocations={conflictLocations} />
         </CardContent>
       </Card>
 

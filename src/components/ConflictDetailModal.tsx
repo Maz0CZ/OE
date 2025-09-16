@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Calendar, Users, MapPin, Info } from "lucide-react";
+import { Calendar, Users, MapPin, Info } from "lucide-react"; // Removed ExternalLink and Globe icons
 import { cn } from "@/lib/utils";
 
 interface Conflict {
@@ -26,10 +26,7 @@ interface Conflict {
   involved_parties: string[];
   lat: number | null;
   lon: number | null;
-  summary: string | null;
-  wikipedia_url: string | null;
-  conflict_type: string | null;
-  countries_involved: string[] | null;
+  // Removed: summary, wikipedia_url, conflict_type, countries_involved
 }
 
 interface ConflictDetailModalProps {
@@ -43,11 +40,10 @@ const getStatusBadgeVariant = (status: Conflict["status"]) => {
     case "active":
       return "default";
     case "resolved":
+    case "de-escalating": // Group de-escalating with resolved for now
       return "secondary";
     case "escalating":
       return "destructive";
-    case "de-escalating":
-      return "outline";
     default:
       return "default";
   }
@@ -85,7 +81,7 @@ const ConflictDetailModal: React.FC<ConflictDetailModalProps> = ({
       if (!conflictId) throw new Error("Conflict ID is missing.");
       const { data, error } = await supabase
         .from("conflicts")
-        .select("*")
+        .select('id, name, region, status, severity, start_date, casualties, involved_parties, lat, lon') // Removed non-existent columns
         .eq("id", conflictId)
         .single();
 
@@ -137,16 +133,10 @@ const ConflictDetailModal: React.FC<ConflictDetailModalProps> = ({
               <Badge className={getSeverityBadgeColor(conflict.severity)}>
                 Severity: {conflict.severity}
               </Badge>
-              {conflict.conflict_type && (
-                <Badge variant="outline" className="border-highlight text-highlight">
-                  Type: {conflict.conflict_type}
-                </Badge>
-              )}
+              {/* Removed conflict_type badge */}
             </div>
 
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              {conflict.summary || "No summary available."}
-            </p>
+            {/* Removed summary paragraph */}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="flex items-center text-foreground">
@@ -171,27 +161,10 @@ const ConflictDetailModal: React.FC<ConflictDetailModalProps> = ({
                 <strong>Involved Parties:</strong>{" "}
                 {conflict.involved_parties?.join(", ") || "N/A"}
               </div>
-              {conflict.countries_involved && conflict.countries_involved.length > 0 && (
-                <div className="flex items-center text-foreground col-span-full">
-                  <Globe size={16} className="mr-2 text-highlight" />
-                  <strong>Countries Involved:</strong>{" "}
-                  {conflict.countries_involved.join(", ")}
-                </div>
-              )}
+              {/* Removed Countries Involved section */}
             </div>
 
-            {conflict.wikipedia_url && (
-              <Button asChild variant="outline" className="w-full mt-4 border-highlight text-highlight hover:bg-highlight hover:text-primary-foreground">
-                <a
-                  href={conflict.wikipedia_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center"
-                >
-                  <ExternalLink size={16} className="mr-2" /> Read on Wikipedia
-                </a>
-              </Button>
-            )}
+            {/* Removed Wikipedia button */}
           </div>
         )}
       </DialogContent>
