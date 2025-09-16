@@ -70,7 +70,7 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
                 key={geo.rsmKey}
                 geography={geo}
                 fill="hsl(var(--muted))"
-                stroke="hsl(var(--border))"
+                stroke="hsl(var(--muted-foreground))" {/* Changed stroke to muted-foreground */}
                 strokeWidth={0.5}
               />
             ))
