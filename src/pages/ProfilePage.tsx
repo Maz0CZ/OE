@@ -11,7 +11,7 @@ const ProfilePage: React.FC = () => {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/');
+    navigate('/login');
   };
 
   if (!currentUser) {

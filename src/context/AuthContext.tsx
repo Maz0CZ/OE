@@ -2,7 +2,6 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 import { User as SupabaseUser } from "@supabase/supabase-js";
-import { useNavigate } from "react-router-dom";
 
 export type UserRole = "admin" | "moderator" | "reporter" | "user" | "guest";
 
@@ -31,17 +30,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
           await fetchUserProfile(session.user);
-          navigate('/');
         } else if (event === 'SIGNED_OUT') {
           setCurrentUser(null);
-          navigate('/login');
         }
         setIsLoading(false);
       }
@@ -60,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
   const fetchUserProfile = async (user: SupabaseUser) => {
     const { data, error } = await supabase
