@@ -62,6 +62,7 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        highlight: "#ab47bc", // New highlight color
       },
       borderRadius: {
         lg: "var(--radius)",
