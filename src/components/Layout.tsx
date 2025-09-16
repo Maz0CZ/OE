@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthContext"; // Import useAuth
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,13 +11,16 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
+  const { currentUser, logout, isAdmin, isModerator, isReporter } = useAuth();
 
   const navItems = [
-    { name: "Dashboard", path: "/" },
-    { name: "Conflicts", path: "/conflicts" },
-    { name: "Countries", path: "/countries" },
-    { name: "Violations", path: "/violations" },
-    { name: "UN Declarations", path: "/un-declarations" },
+    { name: "Dashboard", path: "/", roles: ["admin", "moderator", "reporter", "user"] },
+    { name: "Conflicts", path: "/conflicts", roles: ["admin", "moderator", "reporter", "user"] },
+    { name: "Countries", path: "/countries", roles: ["admin", "moderator", "reporter", "user"] },
+    { name: "Violations", path: "/violations", roles: ["admin", "moderator", "reporter", "user"] },
+    { name: "UN Declarations", path: "/un-declarations", roles: ["admin", "moderator", "reporter", "user"] },
+    { name: "Forum", path: "/forum", roles: ["admin", "moderator", "reporter", "user"] },
+    { name: "Admin", path: "/admin", roles: ["admin"] }, // Only admin can see this
   ];
 
   return (
@@ -32,20 +36,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <nav className="flex-grow">
             <ul className="flex space-x-4 justify-center">
               {navItems.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    to={item.path}
-                    className={`hover:text-highlight transition-colors ${
-                      location.pathname === item.path ? "text-highlight font-semibold" : ""
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                </li>
+                (item.roles.includes(currentUser?.role || "user")) && ( // Conditionally render based on role
+                  <li key={item.name}>
+                    <Link
+                      to={item.path}
+                      className={`hover:text-highlight transition-colors ${
+                        location.pathname === item.path ? "text-highlight font-semibold" : ""
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  </li>
+                )
               ))}
             </ul>
           </nav>
           <div className="flex items-center space-x-2">
+            {currentUser && (
+              <span className="text-sm text-muted-foreground mr-2">
+                Logged in as: <span className="font-semibold text-highlight">{currentUser.username} ({currentUser.role})</span>
+              </span>
+            )}
             <Button variant="outline" className="bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground">
               Debug
             </Button>
@@ -57,6 +68,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Button className="bg-highlight hover:bg-purple-700 text-primary-foreground">
               Search
             </Button>
+            {currentUser && (
+              <Button variant="ghost" onClick={logout} className="text-muted-foreground hover:text-highlight">
+                Logout
+              </Button>
+            )}
           </div>
         </div>
       </header>
