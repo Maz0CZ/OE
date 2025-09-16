@@ -2,8 +2,8 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
-import { Toaster } from "@/components/ui/sonner";
 import Layout from "@/components/Layout";
+import AuthLayout from "@/components/AuthLayout"; // Import the new AuthLayout
 import Dashboard from "@/pages/Dashboard";
 import ConflictsPage from "@/pages/ConflictsPage";
 import Admin from "@/pages/Admin";
@@ -14,7 +14,7 @@ import NotFound from "@/pages/NotFound";
 import CountriesPage from "./pages/CountriesPage";
 import ViolationsPage from "./pages/ViolationsPage";
 import UNDeclarationsPage from "./pages/UNDeclarationsPage";
-import PostDetailPage from "./pages/PostDetailPage"; // Import PostDetailPage
+import PostDetailPage from "./pages/PostDetailPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -26,8 +26,22 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <Router>
             <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
+              <Route
+                path="/login"
+                element={
+                  <AuthLayout> {/* Use AuthLayout for login */}
+                    <LoginPage />
+                  </AuthLayout>
+                }
+              />
+              <Route
+                path="/register"
+                element={
+                  <AuthLayout> {/* Use AuthLayout for register */}
+                    <RegisterPage />
+                  </AuthLayout>
+                }
+              />
               <Route
                 path="/"
                 element={
@@ -61,7 +75,7 @@ function App() {
                 }
               />
               <Route
-                path="/forum/:postId" // New route for individual posts
+                path="/forum/:postId"
                 element={
                   <Layout>
                     <PostDetailPage />
@@ -96,7 +110,7 @@ function App() {
             </Routes>
           </Router>
         </QueryClientProvider>
-        <Toaster />
+        {/* Toaster is now part of AuthLayout and Layout, remove from here */}
       </AuthProvider>
     </ThemeProvider>
   );

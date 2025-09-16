@@ -3,22 +3,24 @@ import MetricCard from "@/components/MetricCard";
 import { Swords, TriangleAlert, Building, CircleDot } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import InteractiveWorldMap from "@/components/InteractiveWorldMap";
+import InteractiveWorldMap from "@/components/InteractiveWorldMap"; // Ensure this is imported
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+
+interface ConflictSummary {
+  id: string; // Added id for map markers
+  name: string; // Added name for map markers
+  status: string;
+  severity: string;
+  lat: number | null;
+  lon: number | null;
+}
 
 interface ConflictLocation {
   id: string;
   name: string;
   lat: number;
   lon: number;
-}
-
-interface ConflictSummary {
-  status: string;
-  severity: string;
-  lat: number | null; // Ensure lat/lon are included for map data
-  lon: number | null;
 }
 
 const Dashboard: React.FC = () => {
@@ -28,7 +30,7 @@ const Dashboard: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('conflicts')
-        .select('status, severity, lat, lon'); // Select lat/lon for map
+        .select('id, name, status, severity, lat, lon'); // Select id and name for map markers
 
       if (error) throw error;
       return data as ConflictSummary[];
@@ -37,10 +39,10 @@ const Dashboard: React.FC = () => {
 
   // Filter conflict locations for the map
   const conflictLocations: ConflictLocation[] = (allConflicts || [])
-    .filter(c => c.lat !== null && c.lon !== null)
+    .filter(c => c.lat !== null && c.lon !== null && c.id && c.name) // Ensure id and name exist
     .map(c => ({
-      id: c.id, // Assuming id is available in ConflictSummary or can be derived
-      name: c.name, // Assuming name is available
+      id: c.id,
+      name: c.name,
       lat: c.lat!,
       lon: c.lon!,
     }));
@@ -139,7 +141,7 @@ const Dashboard: React.FC = () => {
           <CardTitle className="text-2xl font-semibold text-foreground">Global Conflict Map</CardTitle>
         </CardHeader>
         <CardContent>
-          <InteractiveWorldMap conflictLocations={conflictLocations || []} />
+          <InteractiveWorldMap conflictLocations={conflictLocations} /> {/* Use InteractiveWorldMap */}
         </CardContent>
       </Card>
 

@@ -23,7 +23,7 @@ const CountryCard: React.FC<CountryCardProps> = ({
     <Card className="bg-card border-highlight/20 hover:border-highlight transition-colors flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
-          <span className="text-3xl">{flagEmoji}</span> {name}
+          <span className="text-3xl" role="img" aria-label={`Flag of ${name}`}>{flagEmoji}</span> {name}
         </CardTitle>
         <Badge
           className={cn(
