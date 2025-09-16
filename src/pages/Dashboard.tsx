@@ -3,26 +3,104 @@ import MetricCard from "@/components/MetricCard";
 import { Swords, TriangleAlert, Building, CircleDot } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import WorldMap from "@/components/WorldMap"; // Import the new WorldMap component
+import WorldMap from "@/components/WorldMap";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabaseClient";
 
-const data = [
-  { name: "Critical", value: 300, color: "#ef4444" }, // Red
-  { name: "High", value: 200, color: "#f97316" }, // Orange
-  { name: "Medium", value: 500, color: "#6b7280" }, // Gray
-  { name: "Low", value: 400, color: "#4b5563" }, // Darker Gray
-];
+interface ConflictLocation {
+  id: string;
+  name: string;
+  lat: number;
+  lon: number;
+}
 
-// Mock conflict locations for the map
-const mockConflictLocations = [
-  { id: "loc1", name: "Syria", lat: 34.8021, lon: 38.9968 },
-  { id: "loc2", name: "Ukraine", lat: 48.3794, lon: 31.1656 },
-  { id: "loc3", name: "Yemen", lat: 15.5527, lon: 48.5164 },
-  { id: "loc4", name: "Sahel Region", lat: 17.6078, lon: 8.0817 },
-  { id: "loc5", name: "Ethiopia", lat: 9.145, lon: 40.4897 },
-  { id: "loc6", name: "Myanmar", lat: 21.9139, lon: 95.9562 },
-];
+interface ConflictSummary {
+  status: string;
+  severity: string;
+}
 
 const Dashboard: React.FC = () => {
+  // Fetch conflict locations for the map
+  const { data: conflictLocations, isLoading: mapLoading, error: mapError } = useQuery<ConflictLocation[]>({
+    queryKey: ['conflictLocations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('conflicts')
+        .select('id, name, lat, lon')
+        .not('lat', 'is', null) // Only get conflicts with lat/lon
+        .not('lon', 'is', null);
+
+      if (error) throw error;
+      return data as ConflictLocation[];
+    }
+  });
+
+  // Fetch all conflicts for metrics and pie chart
+  const { data: allConflicts, isLoading: conflictsLoading, error: conflictsError } = useQuery<ConflictSummary[]>({
+    queryKey: ['allConflictsSummary'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('conflicts')
+        .select('status, severity');
+
+      if (error) throw error;
+      return data as ConflictSummary[];
+    }
+  });
+
+  // Calculate metrics
+  const activeConflicts = allConflicts?.filter(c => c.status === 'active').length || 0;
+  const criticalSeverityConflicts = allConflicts?.filter(c => c.severity === 'critical').length || 0;
+  // Placeholder for violations and UN declarations, as these would come from other tables
+  const violationsReported = 623; // Placeholder
+  const unDeclarations = 49; // Placeholder
+
+  // Prepare data for Pie Chart
+  const severityCounts = allConflicts?.reduce((acc, conflict) => {
+    acc[conflict.severity] = (acc[conflict.severity] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const pieChartData = [
+    { name: "Critical", value: severityCounts?.critical || 0, color: "#ef4444" }, // Red
+    { name: "High", value: severityCounts?.high || 0, color: "#f97316" }, // Orange
+    { name: "Medium", value: severityCounts?.medium || 0, color: "#6b7280" }, // Gray
+    { name: "Low", value: severityCounts?.low || 0, color: "#4b5563" }, // Darker Gray
+  ];
+
+  // Fetch recent logs for Recent Activity
+  const { data: recentLogs, isLoading: logsLoading, error: logsError } = useQuery<{ id: string; message: string; created_at: string }[]>({
+    queryKey: ['recentLogs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('logs')
+        .select('id, message, created_at')
+        .order('created_at', { ascending: false })
+        .limit(5); // Get only the 5 most recent logs
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  if (mapLoading || conflictsLoading || logsLoading) {
+    return (
+      <div className="space-y-8 text-center">
+        <h1 className="text-5xl font-extrabold text-foreground">Global Overview</h1>
+        <p className="text-lg text-muted-foreground">Loading dashboard data...</p>
+      </div>
+    );
+  }
+
+  if (mapError || conflictsError || logsError) {
+    return (
+      <div className="space-y-8 text-center">
+        <h1 className="text-5xl font-extrabold text-foreground">Global Overview</h1>
+        <p className="text-lg text-destructive">Error loading dashboard: {mapError?.message || conflictsError?.message || logsError?.message}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -30,10 +108,10 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard icon={<Swords size={48} />} value={18} label="Active Conflicts" />
-        <MetricCard icon={<TriangleAlert size={48} />} value={623} label="Violations Reported" />
-        <MetricCard icon={<Building size={48} />} value={49} label="UN Declarations" />
-        <MetricCard icon={<CircleDot size={48} className="text-red-500" />} value={1} label="Critical Severity" />
+        <MetricCard icon={<Swords size={48} />} value={activeConflicts} label="Active Conflicts" />
+        <MetricCard icon={<TriangleAlert size={48} />} value={violationsReported} label="Violations Reported" />
+        <MetricCard icon={<Building size={48} />} value={unDeclarations} label="UN Declarations" />
+        <MetricCard icon={<CircleDot size={48} className="text-red-500" />} value={criticalSeverityConflicts} label="Critical Severity" />
       </div>
 
       <Card className="bg-card border-highlight/20 p-6">
@@ -41,7 +119,7 @@ const Dashboard: React.FC = () => {
           <CardTitle className="text-2xl font-semibold text-foreground">Global Conflict Map</CardTitle>
         </CardHeader>
         <CardContent>
-          <WorldMap conflictLocations={mockConflictLocations} />
+          <WorldMap conflictLocations={conflictLocations || []} />
         </CardContent>
       </Card>
 
@@ -54,7 +132,7 @@ const Dashboard: React.FC = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={data}
+                  data={pieChartData}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -63,7 +141,7 @@ const Dashboard: React.FC = () => {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {data.map((entry, index) => (
+                  {pieChartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -77,20 +155,18 @@ const Dashboard: React.FC = () => {
             <CardTitle className="text-2xl font-semibold text-foreground">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              "Report 1: Incident detected in Region Syria",
-              "Report 2: Incident detected in Region Ukraine",
-              "Report 3: Incident detected in Region Yemen",
-              "Report 4: Incident detected in Region Sahel",
-              "Report 5: Incident detected in Region South Sudan",
-            ].map((activity, index) => (
-              <div
-                key={index}
-                className="p-3 bg-secondary rounded-md text-muted-foreground hover:bg-highlight/20 hover:text-highlight transition-colors cursor-pointer"
-              >
-                {activity}
-              </div>
-            ))}
+            {recentLogs?.length === 0 ? (
+              <p className="text-muted-foreground">No recent activity logs.</p>
+            ) : (
+              recentLogs?.map((log) => (
+                <div
+                  key={log.id}
+                  className="p-3 bg-secondary rounded-md text-muted-foreground hover:bg-highlight/20 hover:text-highlight transition-colors cursor-pointer"
+                >
+                  [{new Date(log.created_at).toLocaleTimeString()}] {log.message}
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

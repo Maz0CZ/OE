@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabaseClient"
-import { useAuth } from "@/context/AuthContext" // Added missing import for useAuth
-import { toast } from "sonner" // Added missing import for toast
-import ForumPostCard from "@/components/ForumPostCard" // Added missing import for ForumPostCard
-import { ForumPostSkeleton } from "@/components/ForumPostSkeleton" // Added missing import for ForumPostSkeleton
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card" // Added missing imports for Card components
-import { Input } from "@/components/ui/input" // Added missing import for Input
-import { Textarea } from "@/components/ui/textarea" // Added missing import for Textarea
-import { Button } from "@/components/ui/button" // Added missing import for Button
-import { Label } from "@/components/ui/label" // Added missing import for Label
+import { useAuth } from "@/context/AuthContext"
+import { toast } from "sonner"
+import ForumPostCard from "@/components/ForumPostCard"
+import { ForumPostSkeleton } from "@/components/ForumPostSkeleton"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
 
 
 interface Post {
@@ -21,6 +21,7 @@ interface Post {
   likes: number;
   dislikes: number;
   comments_count: number;
+  moderation_status: "pending" | "approved" | "rejected"; // Added moderation_status
   profiles: {
     username: string;
   };
@@ -37,6 +38,7 @@ const Forum: React.FC = () => {
       const { data, error } = await supabase
         .from('posts')
         .select('*, profiles(username)')
+        .eq('moderation_status', 'approved') // Only fetch approved posts for public view
         .order('created_at', { ascending: false })
       
       if (error) throw error
@@ -54,9 +56,10 @@ const Forum: React.FC = () => {
           title: newPostTitle,
           content: newPostContent,
           author_id: currentUser.id,
-          likes: 0, // Initialize likes
-          dislikes: 0, // Initialize dislikes
-          comments_count: 0, // Initialize comments count
+          likes: 0,
+          dislikes: 0,
+          comments_count: 0,
+          moderation_status: 'pending', // New posts start as pending moderation
         })
         .select()
       
@@ -66,8 +69,8 @@ const Forum: React.FC = () => {
     onSuccess: () => {
       setNewPostTitle("")
       setNewPostContent("")
-      refetch()
-      toast.success("Post created successfully!")
+      refetch() // Refetch to update the list (though new posts are pending, this will refresh if any were approved)
+      toast.success("Post created successfully! It will be visible after moderation.")
     },
     onError: (error) => {
       toast.error(`Error creating post: ${error.message}`)
@@ -93,23 +96,15 @@ const Forum: React.FC = () => {
       toast.error("You must be logged in to like posts.")
       return
     }
-    // Optimistically update UI
-    const previousPosts = posts
-    const updatedPosts = posts?.map(post => 
-      post.id === postId ? { ...post, likes: post.likes + 1 } : post
-    )
-    // This would typically be handled by react-query's `setQueryData`
-    // For now, we'll just refetch after mutation
     
+    const currentLikes = posts?.find(p => p.id === postId)?.likes || 0;
     const { error } = await supabase
       .from('posts')
-      .update({ likes: (posts?.find(p => p.id === postId)?.likes || 0) + 1 })
-      .eq('id', postId)
+      .update({ likes: currentLikes + 1 })
+      .eq('id', postId);
 
     if (error) {
       toast.error(`Error liking post: ${error.message}`)
-      // Revert optimistic update if error
-      // setQueryData(['forumPosts'], previousPosts)
     } else {
       refetch() // Refetch to get actual updated data
     }
@@ -120,22 +115,15 @@ const Forum: React.FC = () => {
       toast.error("You must be logged in to dislike posts.")
       return
     }
-    // Optimistically update UI
-    const previousPosts = posts
-    const updatedPosts = posts?.map(post => 
-      post.id === postId ? { ...post, dislikes: post.dislikes + 1 } : post
-    )
-    // setQueryData(['forumPosts'], updatedPosts)
-
+    
+    const currentDislikes = posts?.find(p => p.id === postId)?.dislikes || 0;
     const { error } = await supabase
       .from('posts')
-      .update({ dislikes: (posts?.find(p => p.id === postId)?.dislikes || 0) + 1 })
-      .eq('id', postId)
+      .update({ dislikes: currentDislikes + 1 })
+      .eq('id', postId);
 
     if (error) {
       toast.error(`Error disliking post: ${error.message}`)
-      // Revert optimistic update if error
-      // setQueryData(['forumPosts'], previousPosts)
     } else {
       refetch() // Refetch to get actual updated data
     }

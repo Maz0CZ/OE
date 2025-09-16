@@ -13,6 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/lib/supabaseClient";
 
 interface Conflict {
   id: string;
@@ -20,83 +22,10 @@ interface Conflict {
   region: string;
   status: "active" | "resolved" | "escalating" | "de-escalating";
   severity: "critical" | "high" | "medium" | "low";
-  startDate: string;
+  start_date: string; // Changed to start_date to match Supabase column
   casualties: number;
-  involvedParties: string[];
+  involved_parties: string[];
 }
-
-const conflictsData: Conflict[] = [
-  {
-    id: "C001",
-    name: "Syrian Civil War",
-    region: "Middle East",
-    status: "active",
-    severity: "critical",
-    startDate: "2011-03-15",
-    casualties: 500000,
-    involvedParties: ["Syrian Government", "Rebel Groups", "ISIS", "International Coalitions"],
-  },
-  {
-    id: "C002",
-    name: "War in Ukraine",
-    region: "Eastern Europe",
-    status: "escalating",
-    severity: "critical",
-    startDate: "2014-02-20",
-    casualties: 300000,
-    involvedParties: ["Ukraine", "Russia", "NATO Allies"],
-  },
-  {
-    id: "C003",
-    name: "Yemen Civil War",
-    region: "Middle East",
-    status: "active",
-    severity: "high",
-    startDate: "2014-09-19",
-    casualties: 377000,
-    involvedParties: ["Houthi Movement", "Yemeni Government", "Saudi-led Coalition"],
-  },
-  {
-    id: "C004",
-    name: "Sahel Conflict",
-    region: "West Africa",
-    status: "active",
-    severity: "high",
-    startDate: "2012-01-17",
-    casualties: 50000,
-    involvedParties: ["Militant Groups", "National Armies", "French Forces"],
-  },
-  {
-    id: "C005",
-    name: "Ethiopian Civil War",
-    region: "East Africa",
-    status: "de-escalating",
-    severity: "medium",
-    startDate: "2020-11-04",
-    casualties: 100000,
-    involvedParties: ["Ethiopian Government", "Tigray People's Liberation Front"],
-  },
-  {
-    id: "C006",
-    name: "Nagorno-Karabakh Conflict",
-    region: "Caucasus",
-    status: "resolved",
-    severity: "low",
-    startDate: "1988-02-20",
-    casualties: 30000,
-    involvedParties: ["Armenia", "Azerbaijan"],
-  },
-  {
-    id: "C007",
-    name: "Myanmar Civil War",
-    region: "Southeast Asia",
-    status: "escalating",
-    severity: "high",
-    startDate: "2021-02-01",
-    casualties: 50000,
-    involvedParties: ["Tatmadaw", "Ethnic Armed Organizations", "People's Defense Force"],
-  },
-];
 
 const getStatusBadgeVariant = (status: Conflict["status"]) => {
   switch (status) {
@@ -129,6 +58,19 @@ const getSeverityBadgeColor = (severity: Conflict["severity"]) => {
 };
 
 const ConflictsPage: React.FC = () => {
+  const { data: conflictsData, isLoading, error } = useQuery<Conflict[]>({
+    queryKey: ['conflicts'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('conflicts')
+        .select('*')
+        .order('start_date', { ascending: false });
+
+      if (error) throw error;
+      return data as Conflict[];
+    }
+  });
+
   const handleViewDetails = (conflictId: string) => {
     toast.info(`Viewing details for conflict: ${conflictId}`);
     // In a real app, navigate to a detailed conflict page
@@ -138,6 +80,24 @@ const ConflictsPage: React.FC = () => {
     toast.info(`Reporting update for conflict: ${conflictId}`);
     // In a real app, open a form to submit an update
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8 text-center">
+        <h1 className="text-5xl font-extrabold text-foreground">Global Conflicts</h1>
+        <p className="text-lg text-muted-foreground">Loading conflicts data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8 text-center">
+        <h1 className="text-5xl font-extrabold text-foreground">Global Conflicts</h1>
+        <p className="text-lg text-destructive">Error loading conflicts: {error.message}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -151,7 +111,7 @@ const ConflictsPage: React.FC = () => {
           <CardTitle className="text-2xl font-semibold text-foreground">Conflict List</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border border-highlight/20 overflow-x-auto"> {/* Added overflow-x-auto */}
+          <div className="rounded-md border border-highlight/20 overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-secondary hover:bg-secondary">
@@ -170,44 +130,50 @@ const ConflictsPage: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {conflictsData.map((conflict) => (
-                  <TableRow key={conflict.id} className="hover:bg-accent/20">
-                    <TableCell className="font-medium text-muted-foreground">{conflict.id}</TableCell>
-                    <TableCell className="text-foreground font-semibold">{conflict.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{conflict.region}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(conflict.status)}>{conflict.status}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getSeverityBadgeColor(conflict.severity)}>{conflict.severity}</Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{conflict.startDate}</TableCell>
-                    <TableCell className="text-foreground text-right">{conflict.casualties.toLocaleString()}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-card border-highlight/20">
-                          <DropdownMenuLabel className="text-foreground">Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleViewDetails(conflict.id)} className="hover:bg-accent hover:text-accent-foreground">
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleReportUpdate(conflict.id)} className="hover:bg-accent hover:text-accent-foreground">
-                            Report Update
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-highlight/20" />
-                          <DropdownMenuItem className="text-red-500 hover:bg-red-500/20 hover:text-red-400">
-                            Delete Conflict (Admin Only)
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                {conflictsData?.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">No conflicts found. Add some in Supabase!</TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  conflictsData?.map((conflict) => (
+                    <TableRow key={conflict.id} className="hover:bg-accent/20">
+                      <TableCell className="font-medium text-muted-foreground">{conflict.id}</TableCell>
+                      <TableCell className="text-foreground font-semibold">{conflict.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{conflict.region}</TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(conflict.status)}>{conflict.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getSeverityBadgeColor(conflict.severity)}>{conflict.severity}</Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{conflict.start_date}</TableCell>
+                      <TableCell className="text-foreground text-right">{conflict.casualties?.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="bg-card border-highlight/20">
+                            <DropdownMenuLabel className="text-foreground">Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleViewDetails(conflict.id)} className="hover:bg-accent hover:text-accent-foreground">
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleReportUpdate(conflict.id)} className="hover:bg-accent hover:text-accent-foreground">
+                              Report Update
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-highlight/20" />
+                            <DropdownMenuItem className="text-red-500 hover:bg-red-500/20 hover:text-red-400">
+                              Delete Conflict (Admin Only)
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
