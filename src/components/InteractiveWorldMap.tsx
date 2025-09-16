@@ -33,7 +33,7 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
         }}
         className="w-full h-full"
       >
-        <Geographies geography={geoUrl}>
+        <Geographies geography={geoUrl} feature="countries"> {/* Added feature="countries" */}
           {({ geographies }) =>
             geographies.map((geo) => (
               <Geography
