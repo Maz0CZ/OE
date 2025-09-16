@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   ComposableMap,
   Geographies,
@@ -6,7 +6,6 @@ import {
   Marker,
 } from "react-simple-maps";
 import { MapPin } from "lucide-react";
-import { feature } from "topojson-client"; // Import feature from topojson-client
 
 interface ConflictLocation {
   id: string;
@@ -25,35 +24,6 @@ const geoUrl =
 const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
   conflictLocations,
 }) => {
-  const [geographyData, setGeographyData] = useState<any>(null); // State to hold processed geography data
-
-  useEffect(() => {
-    fetch(geoUrl)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then((topology) => {
-        // Use topojson-client to extract the 'countries' feature
-        const countries = feature(topology, topology.objects.countries);
-        setGeographyData(countries);
-      })
-      .catch((error) => {
-        console.error("Error fetching or processing geography data:", error);
-        // In a real app, you might want to show a toast notification here
-      });
-  }, []); // Empty dependency array means this runs once on mount
-
-  if (!geographyData) {
-    return (
-      <div className="relative w-full h-96 bg-secondary rounded-lg overflow-hidden flex items-center justify-center">
-        <p className="text-muted-foreground">Loading map data...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="relative w-full h-96 bg-secondary rounded-lg overflow-hidden">
       <ComposableMap
@@ -63,7 +33,7 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
         }}
         className="w-full h-full"
       >
-        <Geographies geography={geographyData}> {/* Pass processed data directly */}
+        <Geographies geography={geoUrl}> {/* Pass the URL directly */}
           {({ geographies }) =>
             geographies.map((geo) => (
               <Geography
