@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS public.posts (
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   title text NOT NULL,
   content text NOT NULL,
-  author_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL NOT NULL, -- Link to public.profiles
+  author_id uuid REFERENCES auth.users(id) ON DELETE SET NULL NOT NULL, -- Link to auth.users
   moderation_status text DEFAULT 'pending' NOT NULL
 );
 
@@ -83,7 +83,7 @@ CREATE POLICY "Admins and Moderators can delete any post."
 CREATE TABLE IF NOT EXISTS public.post_reactions (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
-  user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL, -- Link to public.profiles
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL, -- Link to auth.users
   post_id uuid REFERENCES public.posts(id) ON DELETE CASCADE NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('like', 'dislike')),
   UNIQUE (user_id, post_id) -- Ensure a user can only react once per post
@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS public.comments (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   content TEXT NOT NULL,
-  author_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL NOT NULL, -- Link to public.profiles
+  author_id uuid REFERENCES auth.users(id) ON DELETE SET NULL NOT NULL, -- Link to auth.users
   post_id uuid REFERENCES public.posts(id) ON DELETE CASCADE NOT NULL
 );
 
@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS public.violations (
   description text,
   status text DEFAULT 'reported' NOT NULL,
   severity text DEFAULT 'medium' NOT NULL,
-  reported_by_user_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL -- Link to public.profiles
+  reported_by_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL -- Link to auth.users
 );
 
 ALTER TABLE public.violations ENABLE ROW LEVEL SECURITY;
@@ -230,7 +230,7 @@ CREATE TABLE IF NOT EXISTS public.logs (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   created_at timestamp with time zone DEFAULT now() NOT NULL,
   message text NOT NULL,
-  user_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL, -- Link to public.profiles
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL, -- Link to auth.users
   log_level text NOT NULL
 );
 
@@ -256,10 +256,10 @@ CREATE TABLE IF NOT EXISTS public.conflicts (
   status text DEFAULT 'active' NOT NULL,
   severity text DEFAULT 'medium' NOT NULL,
   start_date date NOT NULL,
-  casualties bigint,
-  involved_parties text[],
-  lat numeric,
-  lon numeric
+  casualties integer, -- Changed to integer
+  involved_parties text[], -- Changed to text[] (ARRAY in schema is equivalent)
+  lat double precision,
+  lon double precision
 );
 
 ALTER TABLE public.conflicts ENABLE ROW LEVEL SECURITY;
@@ -295,7 +295,7 @@ SELECT
 FROM
   public.posts p
 LEFT JOIN
-  public.profiles pr ON p.author_id = pr.id;
+  public.profiles pr ON p.author_id = pr.id; -- Join posts.author_id (auth.users.id) with profiles.id (auth.users.id)
 
 -- Dummy Data Insertion (ON CONFLICT DO NOTHING prevents errors if data already exists)
 
@@ -368,11 +368,13 @@ BEGIN
     ON CONFLICT (user_id, post_id) DO NOTHING;
   END IF;
   IF moderator_profile_id IS NOT NULL AND post_diplomacy_id IS NOT NULL THEN
-    INSERT INTO public.post_reactions (user_id, post_diplomacy_id, 'like')
+    INSERT INTO public.post_reactions (user_id, post_diplomacy_id, 'like') VALUES
+    (moderator_profile_id, post_diplomacy_id, 'like')
     ON CONFLICT (user_id, post_id) DO NOTHING;
   END IF;
   IF moderator_profile_id IS NOT NULL AND post_climate_id IS NOT NULL THEN
-    INSERT INTO public.post_reactions (user_id, post_climate_id, 'dislike')
+    INSERT INTO public.post_reactions (user_id, post_climate_id, 'dislike') VALUES
+    (moderator_profile_id, post_climate_id, 'dislike')
     ON CONFLICT (user_id, post_id) DO NOTHING;
   END IF;
 END $$;
