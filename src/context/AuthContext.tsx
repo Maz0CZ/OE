@@ -11,7 +11,8 @@ interface UserProfile {
   username: string;
   role: UserRole;
   avatar_url?: string;
-  email: string; // Added email to UserProfile
+  email: string;
+  status: "active" | "banned"; // Added status to UserProfile
 }
 
 interface AuthContextType {
@@ -72,18 +73,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserProfile = async (user: SupabaseUser) => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("username, role, avatar_url")
+      .select("username, role, avatar_url, status") // Select status as well
       .eq("id", user.id)
       .single();
 
     if (error) {
       console.error("Error fetching user profile:", error.message);
       logActivity(`Error fetching profile for user ${user.id}: ${error.message}`, 'error', user.id);
+      setCurrentUser(null); // Ensure currentUser is null if profile fetch fails
       return;
     }
 
     if (data) {
       setCurrentUser({ id: user.id, email: user.email || 'N/A', ...data });
+    } else {
+      setCurrentUser(null); // If no profile data, set current user to null
     }
   };
 
@@ -108,30 +112,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (email: string, password: string, username: string): Promise<boolean> => {
     setIsLoading(true);
-    const { data, error } = await supabase.auth.signUp({ 
+    // First, sign up the user with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({ 
       email, 
       password,
-      options: {
-        data: {
-          username,
-          role: 'user'
-        }
-      }
+      // Removed options.data as it's for auth.users metadata, not for the profiles table
     });
     setIsLoading(false);
 
-    if (error) {
-      toast.error(error.message);
-      logActivity(`Registration failed for ${email}: ${error.message}`, 'warning');
+    if (authError) {
+      toast.error(authError.message);
+      logActivity(`Registration failed for ${email}: ${authError.message}`, 'warning');
       return false;
     }
 
-    if (data.user) {
-      // Supabase automatically creates a profile on signup if options.data is used
-      // We still need to fetch it to set currentUser correctly
-      await fetchUserProfile(data.user);
+    if (authData.user) {
+      // Explicitly create a profile entry in the 'profiles' table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          username: username,
+          email: email, // Store email in profile for easier access
+          role: 'user', // Default role
+          status: 'active' // Default status
+        });
+
+      if (profileError) {
+        console.error("Error creating user profile:", profileError.message);
+        toast.error(`Registration successful, but failed to create profile: ${profileError.message}. Please try logging in.`);
+        logActivity(`Failed to create profile for new user ${email}: ${profileError.message}`, 'error', authData.user.id);
+        // Optionally, you might want to sign out the user if profile creation is critical
+        // await supabase.auth.signOut();
+        // return false;
+      }
+
+      await fetchUserProfile(authData.user);
       toast.success("Registration successful! Welcome to OpenEyes.");
-      logActivity(`New user registered: ${email} (ID: ${data.user.id})`, 'info', data.user.id);
+      logActivity(`New user registered: ${email} (ID: ${authData.user.id})`, 'info', authData.user.id);
       return true;
     }
     return false;

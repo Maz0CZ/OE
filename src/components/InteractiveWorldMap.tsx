@@ -86,6 +86,11 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
 
   return (
     <div className="relative w-full h-96 bg-secondary rounded-lg overflow-hidden shadow-lg border border-highlight/20">
+      {conflictLocations.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-secondary/80 text-muted-foreground">
+          No conflict locations available to display on the map.
+        </div>
+      )}
       <ComposableMap
         projectionConfig={{
           scale: 150,
@@ -124,7 +129,7 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
           {conflictLocations.map(({ id, name, lat, lon }) => (
             <Marker key={id} coordinates={[lon, lat]} onClick={() => handleMarkerClick(id)}>
               <MapPin
-                size={24}
+                size={30} // Increased size for better visibility
                 className="text-highlight drop-shadow-md cursor-pointer hover:scale-125 transition-transform duration-200"
                 style={{ transform: "translate(-50%, -100%)" }}
               />
