@@ -9,6 +9,7 @@ import {
 import { MapPin } from "lucide-react";
 import { feature } from "topojson-client";
 import ConflictDetailModal from "./ConflictDetailModal";
+import CountryDetailModal from "./CountryDetailModal"; // Import the new CountryDetailModal
 
 interface ConflictLocation {
   id: string;
@@ -29,7 +30,10 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
   const [geographyData, setGeographyData] = useState<any>(null);
   const [position, setPosition] = useState({ coordinates: [0, 0], zoom: 1 });
   const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+
+  const [selectedCountryName, setSelectedCountryName] = useState<string | null>(null);
+  const [isCountryModalOpen, setIsCountryModalOpen] = useState(false);
 
   useEffect(() => {
     fetch(geoUrl)
@@ -54,12 +58,22 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
 
   const handleMarkerClick = (conflictId: string) => {
     setSelectedConflictId(conflictId);
-    setIsModalOpen(true);
+    setIsConflictModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
+  const handleConflictModalClose = () => {
+    setIsConflictModalOpen(false);
     setSelectedConflictId(null);
+  };
+
+  const handleCountryClick = (geo: any) => {
+    setSelectedCountryName(geo.properties.name);
+    setIsCountryModalOpen(true);
+  };
+
+  const handleCountryModalClose = () => {
+    setIsCountryModalOpen(false);
+    setSelectedCountryName(null);
   };
 
   if (!geographyData) {
@@ -83,9 +97,14 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
           zoom={position.zoom}
           center={position.coordinates}
           onMoveEnd={handleZoomableGroupMoveEnd}
-          minZoom={1} // Minimum zoom level
+          minZoom={1} // Minimum zoom level to prevent zooming out too much
           maxZoom={8} // Maximum zoom level
-          // translateExtent={[[0, 0], [1000, 500]]} // Optional: Restrict panning to a specific area if needed
+          // Restrict panning to keep the world map within view
+          // The extent is slightly larger than the 1000x500 viewBox to allow some panning at max zoom
+          translateExtent={[
+            [-50, -50], // Top-left corner
+            [1050, 550], // Bottom-right corner
+          ]}
         >
           <Geographies geography={geographyData}>
             {({ geographies }) =>
@@ -96,7 +115,8 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
                   fill="hsl(var(--muted))"
                   stroke="hsl(var(--muted-foreground))"
                   strokeWidth={0.5}
-                  className="transition-all duration-200 ease-in-out hover:fill-highlight/30"
+                  className="transition-all duration-200 ease-in-out hover:fill-highlight/30 cursor-pointer"
+                  onClick={() => handleCountryClick(geo)}
                 />
               ))
             }
@@ -116,8 +136,14 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
 
       <ConflictDetailModal
         conflictId={selectedConflictId}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
+        isOpen={isConflictModalOpen}
+        onClose={handleConflictModalClose}
+      />
+
+      <CountryDetailModal
+        countryName={selectedCountryName}
+        isOpen={isCountryModalOpen}
+        onClose={handleCountryModalClose}
       />
     </div>
   );
