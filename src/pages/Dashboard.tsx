@@ -16,9 +16,7 @@ const Dashboard: React.FC = () => {
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <h1 className="text-5xl font-extrabold text-foreground">Global Overview</h1>
-        <p className="text-lg text-muted-foreground">
-          Real-time monitoring of conflicts and human rights violations worldwide
-        </p>
+        {/* Removed: <p className="text-lg text-muted-foreground">Real-time monitoring of conflicts and human rights violations worldwide</p> */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

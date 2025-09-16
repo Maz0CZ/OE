@@ -21,7 +21,7 @@ interface ModerationPost {
 }
 
 const Admin: React.FC = () => {
-  const { currentUser, isAdmin, isModerator } = useAuth();
+  const { currentUser, isAdmin, isModerator, isLoading } = useAuth();
 
   const [users, setUsers] = useState<User[]>([
     { id: "user1", name: "Alice Smith", email: "alice@example.com", status: "active" },
@@ -83,6 +83,14 @@ const Admin: React.FC = () => {
     // In a real app, this would open a detailed view for moderation
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <p className="text-xl">Loading admin panel...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <h1 className="text-5xl font-extrabold text-foreground text-center">Admin Panel</h1>
@@ -90,7 +98,7 @@ const Admin: React.FC = () => {
         Manage users, moderate content, and monitor system activities.
       </p>
 
-      {(isAdmin || isModerator) && ( // Only show moderation tools to admins and moderators
+      {(isAdmin || isModerator) ? ( // Only show moderation tools to admins and moderators
         <>
           <Card className="bg-card border-highlight/20 p-6">
             <CardHeader>
@@ -110,6 +118,11 @@ const Admin: React.FC = () => {
             </CardContent>
           </Card>
         </>
+      ) : (
+        <Card className="bg-card border-highlight/20 p-6 text-center">
+          <CardTitle className="text-2xl font-semibold text-foreground mb-4">Access Denied</CardTitle>
+          <p className="text-muted-foreground">You do not have the necessary permissions to access the moderation tools.</p>
+        </Card>
       )}
 
       <Card className="bg-card border-highlight/20 p-6">

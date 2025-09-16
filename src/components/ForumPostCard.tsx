@@ -12,6 +12,8 @@ interface ForumPostCardProps {
   initialDislikes: number;
   commentsCount: number;
   onViewPost: (id: string) => void;
+  onLike: (id: string) => void; // New prop for like action
+  onDislike: (id: string) => void; // New prop for dislike action
 }
 
 const ForumPostCard: React.FC<ForumPostCardProps> = ({
@@ -23,33 +25,30 @@ const ForumPostCard: React.FC<ForumPostCardProps> = ({
   initialDislikes,
   commentsCount,
   onViewPost,
+  onLike,
+  onDislike,
 }) => {
-  const [likes, setLikes] = useState(initialLikes);
-  const [dislikes, setDislikes] = useState(initialDislikes);
+  // These states are now managed by the parent component (Forum.tsx)
+  // and will be updated via props after Supabase interaction.
+  // For now, we'll keep a local state for user reaction to simulate.
   const [userReaction, setUserReaction] = useState<"liked" | "disliked" | null>(null);
 
   const handleLike = () => {
+    onLike(id); // Call parent's like handler
+    // Simulate local reaction for immediate feedback
     if (userReaction === "liked") {
-      setLikes(likes - 1);
       setUserReaction(null);
     } else {
-      setLikes(likes + 1);
-      if (userReaction === "disliked") {
-        setDislikes(dislikes - 1);
-      }
       setUserReaction("liked");
     }
   };
 
   const handleDislike = () => {
+    onDislike(id); // Call parent's dislike handler
+    // Simulate local reaction for immediate feedback
     if (userReaction === "disliked") {
-      setDislikes(dislikes - 1);
       setUserReaction(null);
     } else {
-      setDislikes(dislikes + 1);
-      if (userReaction === "liked") {
-        setLikes(likes - 1);
-      }
       setUserReaction("disliked");
     }
   };
@@ -71,7 +70,7 @@ const ForumPostCard: React.FC<ForumPostCardProps> = ({
             onClick={handleLike}
             className={`flex items-center gap-1 ${userReaction === "liked" ? "text-highlight" : "text-muted-foreground hover:text-highlight"}`}
           >
-            <ThumbsUp size={16} /> {likes}
+            <ThumbsUp size={16} /> {initialLikes}
           </Button>
           <Button
             variant="ghost"
@@ -79,7 +78,7 @@ const ForumPostCard: React.FC<ForumPostCardProps> = ({
             onClick={handleDislike}
             className={`flex items-center gap-1 ${userReaction === "disliked" ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}
           >
-            <ThumbsDown size={16} /> {dislikes}
+            <ThumbsDown size={16} /> {initialDislikes}
           </Button>
           <Button
             variant="ghost"

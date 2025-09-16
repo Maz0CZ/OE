@@ -9,8 +9,11 @@ import Forum from "./pages/Forum";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage"; // Import the new RegisterPage
 import ConflictsPage from "./pages/ConflictsPage";
 import { AuthProvider, useAuth, UserRole } from "./context/AuthContext";
+import { ThemeProvider } from "./components/ThemeProvider"; // Import ThemeProvider
+import { Button } from "./components/ui/button"; // Import Button for Access Denied page
 
 const queryClient = new QueryClient();
 
@@ -19,7 +22,15 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: UserR
   children,
   allowedRoles,
 }) => {
-  const { isAuthenticated, currentUser } = useAuth();
+  const { isAuthenticated, currentUser, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <p className="text-xl">Loading authentication...</p>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -40,79 +51,82 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: UserR
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            {/* Publicly accessible routes */}
-            <Route
-              path="/"
-              element={
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              }
-            />
-            <Route
-              path="/conflicts"
-              element={
-                <Layout>
-                  <ConflictsPage />
-                </Layout>
-              }
-            />
-            <Route
-              path="/countries"
-              element={
-                <Layout>
-                  <div className="text-foreground text-center text-2xl">Countries Page Placeholder</div>
-                </Layout>
-              }
-            />
-            <Route
-              path="/violations"
-              element={
-                <Layout>
-                  <div className="text-foreground text-center text-2xl">Violations Page Placeholder</div>
-                </Layout>
-              }
-            />
-            <Route
-              path="/un-declarations"
-              element={
-                <Layout>
-                  <div className="text-foreground text-center text-2xl">UN Declarations Page Placeholder</div>
-                </Layout>
-              }
-            />
-            <Route
-              path="/forum"
-              element={
-                <Layout>
-                  <Forum />
-                </Layout>
-              }
-            />
-            {/* Protected Admin route */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute allowedRoles={["admin"]}>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme"> {/* Wrap with ThemeProvider */}
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} /> {/* Add Register route */}
+              {/* Publicly accessible routes */}
+              <Route
+                path="/"
+                element={
                   <Layout>
-                    <Admin />
+                    <Dashboard />
                   </Layout>
-                </ProtectedRoute>
-              }
-            />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+                }
+              />
+              <Route
+                path="/conflicts"
+                element={
+                  <Layout>
+                    <ConflictsPage />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/countries"
+                element={
+                  <Layout>
+                    <div className="text-foreground text-center text-2xl">Countries Page Placeholder</div>
+                  </Layout>
+                }
+              />
+              <Route
+                path="/violations"
+                element={
+                  <Layout>
+                    <div className="text-foreground text-center text-2xl">Violations Page Placeholder</div>
+                  </Layout>
+                }
+              />
+              <Route
+                path="/un-declarations"
+                element={
+                  <Layout>
+                    <div className="text-foreground text-center text-2xl">UN Declarations Page Placeholder</div>
+                  </Layout>
+                }
+              />
+              <Route
+                path="/forum"
+                element={
+                  <Layout>
+                    <Forum />
+                  </Layout>
+                }
+              />
+              {/* Protected Admin route */}
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "moderator"]}> {/* Admin and Moderator can access */}
+                    <Layout>
+                      <Admin />
+                    </Layout>
+                  </ProtectedRoute>
+                }
+              />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

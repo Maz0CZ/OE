@@ -4,8 +4,9 @@ import { MadeWithDyad } from "@/components/made-with-dyad";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"; // Import Sheet components for mobile nav
-import { Menu } from "lucide-react"; // Icon for mobile menu
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle"; // Import ThemeToggle
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -13,7 +14,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout, isLoading } = useAuth();
 
   const navItems = [
     { name: "Dashboard", path: "/", roles: ["admin", "moderator", "reporter", "user", "guest"] },
@@ -22,7 +23,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: "Violations", path: "/violations", roles: ["admin", "moderator", "reporter", "user", "guest"] },
     { name: "UN Declarations", path: "/un-declarations", roles: ["admin", "moderator", "reporter", "user", "guest"] },
     { name: "Forum", path: "/forum", roles: ["admin", "moderator", "reporter", "user", "guest"] },
-    { name: "Admin", path: "/admin", roles: ["admin"] },
+    { name: "Admin", path: "/admin", roles: ["admin", "moderator"] }, // Admin and Moderator can see this
   ];
 
   const currentRole = currentUser?.role || "guest";
@@ -46,6 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <span className="font-semibold text-highlight">{currentUser.username}</span>
               </span>
             )}
+            <ThemeToggle /> {/* Theme Toggle for mobile */}
             <Sheet>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -70,12 +72,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   ))}
                   <div className="pt-4 border-t border-border">
                     {currentUser ? (
-                      <Button variant="ghost" onClick={logout} className="w-full justify-start text-muted-foreground hover:text-highlight">
+                      <Button variant="ghost" onClick={logout} className="w-full justify-start text-muted-foreground hover:text-highlight" disabled={isLoading}>
                         Logout
                       </Button>
                     ) : (
                       <Link to="/login">
-                        <Button className="w-full bg-highlight hover:bg-purple-700 text-primary-foreground">
+                        <Button className="w-full bg-highlight hover:bg-purple-700 text-primary-foreground" disabled={isLoading}>
                           Login
                         </Button>
                       </Link>
@@ -113,6 +115,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Logged in as: <span className="font-semibold text-highlight">{currentUser.username} ({currentUser.role})</span>
               </span>
             )}
+            <ThemeToggle /> {/* Theme Toggle for desktop */}
             <Button variant="outline" className="bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground">
               Debug
             </Button>
@@ -125,12 +128,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               Search
             </Button>
             {currentUser ? (
-              <Button variant="ghost" onClick={logout} className="text-muted-foreground hover:text-highlight">
+              <Button variant="ghost" onClick={logout} className="text-muted-foreground hover:text-highlight" disabled={isLoading}>
                 Logout
               </Button>
             ) : (
               <Link to="/login">
-                <Button className="bg-highlight hover:bg-purple-700 text-primary-foreground">
+                <Button className="bg-highlight hover:bg-purple-700 text-primary-foreground" disabled={isLoading}>
                   Login
                 </Button>
               </Link>
