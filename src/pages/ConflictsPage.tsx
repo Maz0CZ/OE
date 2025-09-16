@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"; // Removed ExternalLink icon as wikipedia_url is removed
+import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { logActivity } from "@/utils/logger";
 import { useAuth } from "@/context/AuthContext";
+import ConflictDetailModal from "@/components/ConflictDetailModal"; // Import the modal
 
 interface Conflict {
   id: string;
@@ -29,7 +30,6 @@ interface Conflict {
   involved_parties: string[];
   lat: number | null;
   lon: number | null;
-  // Removed: summary, wikipedia_url, conflict_type, countries_involved
 }
 
 const getStatusBadgeVariant = (status: Conflict["status"]) => {
@@ -37,7 +37,7 @@ const getStatusBadgeVariant = (status: Conflict["status"]) => {
     case "active":
       return "default";
     case "resolved":
-    case "de-escalating": // Group de-escalating with resolved for now
+    case "de-escalating":
       return "secondary";
     case "escalating":
       return "destructive";
@@ -63,12 +63,15 @@ const getSeverityBadgeColor = (severity: Conflict["severity"]) => {
 
 const ConflictsPage: React.FC = () => {
   const { currentUser } = useAuth();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
+
   const { data: conflictsData, isLoading, error } = useQuery<Conflict[]>({
     queryKey: ['conflicts'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('conflicts')
-        .select('id, name, region, status, severity, start_date, casualties, involved_parties, lat, lon') // Removed non-existent columns
+        .select('id, name, region, status, severity, start_date, casualties, involved_parties, lat, lon')
         .order('start_date', { ascending: false });
 
       if (error) {
@@ -80,9 +83,14 @@ const ConflictsPage: React.FC = () => {
   });
 
   const handleViewDetails = (conflictId: string) => {
-    toast.info(`Viewing details for conflict: ${conflictId}`);
-    logActivity(`User viewed details for conflict: ${conflictId}`, 'info', currentUser?.id);
-    // In a real app, navigate to a detailed conflict page or open a modal
+    setSelectedConflictId(conflictId);
+    setIsModalOpen(true);
+    logActivity(`User opened details for conflict: ${conflictId}`, 'info', currentUser?.id);
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedConflictId(null);
   };
 
   const handleReportUpdate = (conflictId: string) => {
@@ -131,7 +139,6 @@ const ConflictsPage: React.FC = () => {
                       Name <ArrowUpDown className="ml-2 h-4 w-4" />
                     </Button>
                   </TableHead>
-                  {/* Removed Type column */}
                   <TableHead className="text-highlight min-w-[120px]">Region</TableHead>
                   <TableHead className="text-highlight min-w-[120px]">Status</TableHead>
                   <TableHead className="text-highlight min-w-[120px]">Severity</TableHead>
@@ -150,7 +157,6 @@ const ConflictsPage: React.FC = () => {
                     <TableRow key={conflict.id} className="hover:bg-accent/20">
                       <TableCell className="font-medium text-muted-foreground">{conflict.id}</TableCell>
                       <TableCell className="text-foreground font-semibold">{conflict.name}</TableCell>
-                      {/* Removed Type cell */}
                       <TableCell className="text-muted-foreground">{conflict.region}</TableCell>
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(conflict.status)}>{conflict.status}</Badge>
@@ -173,7 +179,6 @@ const ConflictsPage: React.FC = () => {
                             <DropdownMenuItem onClick={() => handleViewDetails(conflict.id)} className="hover:bg-accent hover:text-accent-foreground">
                               View Details
                             </DropdownMenuItem>
-                            {/* Removed Wikipedia link */}
                             <DropdownMenuItem onClick={() => handleReportUpdate(conflict.id)} className="hover:bg-accent hover:text-accent-foreground">
                               Report Update
                             </DropdownMenuItem>
@@ -192,6 +197,12 @@ const ConflictsPage: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <ConflictDetailModal
+        conflictId={selectedConflictId}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+      />
     </div>
   );
 };
