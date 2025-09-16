@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react"
-import { useQuery, useMutation } from "@tanstack/react-query"
+import React, { useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabaseClient"
 import { useAuth } from "@/context/AuthContext"
 import { toast } from "sonner"
@@ -18,33 +18,65 @@ interface Post {
   content: string;
   created_at: string;
   author_id: string;
-  likes: number;
-  dislikes: number;
-  comments_count: number;
-  moderation_status: "pending" | "approved" | "rejected"; // Added moderation_status
+  moderation_status: "pending" | "approved" | "rejected";
   profiles: {
     username: string;
   };
+  likes_count: number; // Aggregated count
+  dislikes_count: number; // Aggregated count
+  comments_count: number; // Aggregated count
+  user_reaction_type: 'like' | 'dislike' | null; // User's specific reaction
 }
 
 const Forum: React.FC = () => {
   const { currentUser, isAuthenticated } = useAuth()
+  const queryClient = useQueryClient();
   const [newPostTitle, setNewPostTitle] = useState("")
   const [newPostContent, setNewPostContent] = useState("")
 
-  const { data: posts, isLoading, error, refetch } = useQuery<Post[]>({
-    queryKey: ['forumPosts'],
+  const { data: posts, isLoading, error } = useQuery<Post[]>({
+    queryKey: ['forumPosts', currentUser?.id], // Add currentUser.id to queryKey for user-specific reactions
     queryFn: async () => {
       const { data, error } = await supabase
         .from('posts')
-        .select('*, profiles(username)')
-        .eq('moderation_status', 'approved') // Only fetch approved posts for public view
-        .order('created_at', { ascending: false })
+        .select(`
+          id,
+          title,
+          content,
+          created_at,
+          author_id,
+          moderation_status,
+          profiles(username),
+          likes_count:post_reactions(count),
+          dislikes_count:post_reactions(count),
+          comments_count:comments(count),
+          user_reaction_type:post_reactions(type)
+        `)
+        .eq('moderation_status', 'approved')
+        .order('created_at', { ascending: false });
       
-      if (error) throw error
-      return data as Post[]
+      if (error) throw error;
+
+      // Manually process the data to get correct counts and user reaction
+      const processedData = data.map(post => {
+        const likes = post.likes_count.filter((r: any) => r.type === 'like').length > 0 ? post.likes_count[0].count : 0;
+        const dislikes = post.dislikes_count.filter((r: any) => r.type === 'dislike').length > 0 ? post.dislikes_count[0].count : 0;
+        
+        // Find the current user's reaction if available
+        const userReaction = post.user_reaction_type.find((r: any) => r.user_id === currentUser?.id);
+        
+        return {
+          ...post,
+          likes_count: likes,
+          dislikes_count: dislikes,
+          comments_count: post.comments_count[0]?.count || 0,
+          user_reaction_type: userReaction ? userReaction.type : null,
+        };
+      });
+
+      return processedData as Post[];
     }
-  })
+  });
 
   const createPostMutation = useMutation({
     mutationFn: async () => {
@@ -56,10 +88,7 @@ const Forum: React.FC = () => {
           title: newPostTitle,
           content: newPostContent,
           author_id: currentUser.id,
-          likes: 0,
-          dislikes: 0,
-          comments_count: 0,
-          moderation_status: 'pending', // New posts start as pending moderation
+          moderation_status: 'pending',
         })
         .select()
       
@@ -69,7 +98,7 @@ const Forum: React.FC = () => {
     onSuccess: () => {
       setNewPostTitle("")
       setNewPostContent("")
-      refetch() // Refetch to update the list (though new posts are pending, this will refresh if any were approved)
+      queryClient.invalidateQueries({ queryKey: ['forumPosts'] }); // Invalidate to refetch posts
       toast.success("Post created successfully! It will be visible after moderation.")
     },
     onError: (error) => {
@@ -86,48 +115,41 @@ const Forum: React.FC = () => {
     }
   }
 
-  const handleViewPost = (postId: string) => {
-    toast.info(`Viewing post: ${postId}`)
-    // In a real app, navigate to a detailed post page
-  }
-
-  const handleLike = async (postId: string) => {
+  const handleReaction = async (postId: string, type: 'like' | 'dislike') => {
     if (!isAuthenticated) {
-      toast.error("You must be logged in to like posts.")
-      return
+      toast.error("You must be logged in to react to posts.");
+      return;
     }
-    
-    const currentLikes = posts?.find(p => p.id === postId)?.likes || 0;
-    const { error } = await supabase
-      .from('posts')
-      .update({ likes: currentLikes + 1 })
-      .eq('id', postId);
+    if (!currentUser?.id) return;
 
-    if (error) {
-      toast.error(`Error liking post: ${error.message}`)
+    const currentPost = posts?.find(p => p.id === postId);
+    const existingReaction = currentPost?.user_reaction_type;
+
+    if (existingReaction === type) {
+      // User is un-reacting
+      const { error } = await supabase
+        .from('post_reactions')
+        .delete()
+        .eq('post_id', postId)
+        .eq('user_id', currentUser.id);
+      if (error) {
+        toast.error(`Error removing reaction: ${error.message}`);
+      } else {
+        toast.info(`Removed ${type} from post.`);
+      }
     } else {
-      refetch() // Refetch to get actual updated data
+      // User is changing reaction or adding new reaction
+      const { error } = await supabase
+        .from('post_reactions')
+        .upsert({ post_id: postId, user_id: currentUser.id, type }, { onConflict: 'user_id,post_id' });
+      if (error) {
+        toast.error(`Error adding reaction: ${error.message}`);
+      } else {
+        toast.success(`${type === 'like' ? 'Liked' : 'Disliked'} post!`);
+      }
     }
-  }
-
-  const handleDislike = async (postId: string) => {
-    if (!isAuthenticated) {
-      toast.error("You must be logged in to dislike posts.")
-      return
-    }
-    
-    const currentDislikes = posts?.find(p => p.id === postId)?.dislikes || 0;
-    const { error } = await supabase
-      .from('posts')
-      .update({ dislikes: currentDislikes + 1 })
-      .eq('id', postId);
-
-    if (error) {
-      toast.error(`Error disliking post: ${error.message}`)
-    } else {
-      refetch() // Refetch to get actual updated data
-    }
-  }
+    queryClient.invalidateQueries({ queryKey: ['forumPosts'] }); // Refetch to update counts and user reaction
+  };
 
   if (isLoading) {
     return (
@@ -210,12 +232,12 @@ const Forum: React.FC = () => {
               title={post.title}
               content={post.content}
               author={post.profiles?.username || "Unknown"}
-              initialLikes={post.likes}
-              initialDislikes={post.dislikes}
+              likes={post.likes_count}
+              dislikes={post.dislikes_count}
               commentsCount={post.comments_count}
-              onViewPost={handleViewPost}
-              onLike={handleLike}
-              onDislike={handleDislike}
+              userReaction={post.user_reaction_type}
+              onLike={(id) => handleReaction(id, 'like')}
+              onDislike={(id) => handleReaction(id, 'dislike')}
             />
           ))
         )}

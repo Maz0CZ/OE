@@ -9,6 +9,7 @@ interface UserProfile {
   id: string;
   username: string;
   role: UserRole;
+  avatar_url?: string; // Added avatar_url
 }
 
 interface AuthContextType {
@@ -63,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserProfile = async (user: SupabaseUser) => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("username, role")
+      .select("username, role, avatar_url") // Select avatar_url
       .eq("id", user.id)
       .single();
 
@@ -75,11 +76,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: user.id,
           username: user.email?.split("@")[0] || "New User",
           role: "user",
+          avatar_url: undefined, // Default avatar_url
         };
         const { error: insertError } = await supabase.from("profiles").insert({
           id: user.id,
           username: defaultProfile.username,
           role: defaultProfile.role,
+          avatar_url: defaultProfile.avatar_url,
         });
         if (insertError) {
           console.error("Error creating default profile:", insertError.message);
@@ -135,13 +138,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: data.user.id,
         username: username,
         role: "user", // Default role for new registrations
+        avatar_url: null, // Default avatar_url
       });
 
       if (profileError) {
         console.error("Error creating user profile:", profileError.message);
         toast.error("Registration successful, but failed to create user profile. Please contact support.");
         // Optionally, you might want to delete the auth user here if profile creation fails
-        await supabase.auth.admin.deleteUser(data.user.id); // This would require admin privileges or a server function
+        // await supabase.auth.admin.deleteUser(data.user.id); // This would require admin privileges or a server function
         return false;
       }
 

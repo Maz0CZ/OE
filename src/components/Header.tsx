@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { LogOut, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Sidebar } from "@/components/Sidebar"; // Import Sidebar for mobile menu
+import { Sidebar } from "@/components/Sidebar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar components
 
 const Header: React.FC = () => {
   const { isAuthenticated, currentUser, logout } = useAuth();
@@ -36,9 +37,15 @@ const Header: React.FC = () => {
 
         <div className="flex items-center space-x-4">
           {isAuthenticated && currentUser ? (
-            <span className="text-muted-foreground hidden md:inline">
-              Welcome, <span className="font-semibold text-foreground">{currentUser.username}</span>!
-            </span>
+            <>
+              <span className="text-muted-foreground hidden md:inline">
+                Welcome, <span className="font-semibold text-foreground">{currentUser.username}</span>!
+              </span>
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={currentUser.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.username}`} alt={currentUser.username} />
+                <AvatarFallback>{currentUser.username.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </>
           ) : null}
           <ThemeToggle />
           {isAuthenticated ? (

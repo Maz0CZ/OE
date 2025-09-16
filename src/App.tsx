@@ -14,15 +14,16 @@ import NotFound from "@/pages/NotFound";
 import CountriesPage from "./pages/CountriesPage";
 import ViolationsPage from "./pages/ViolationsPage";
 import UNDeclarationsPage from "./pages/UNDeclarationsPage";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; // Import QueryClient and QueryClientProvider
+import PostDetailPage from "./pages/PostDetailPage"; // Import PostDetailPage
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const queryClient = new QueryClient(); // Create a new QueryClient instance
+const queryClient = new QueryClient();
 
 function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <AuthProvider>
-        <QueryClientProvider client={queryClient}> {/* Wrap with QueryClientProvider */}
+        <QueryClientProvider client={queryClient}>
           <Router>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
@@ -56,6 +57,14 @@ function App() {
                 element={
                   <Layout>
                     <Forum />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/forum/:postId" // New route for individual posts
+                element={
+                  <Layout>
+                    <PostDetailPage />
                   </Layout>
                 }
               />

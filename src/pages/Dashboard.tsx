@@ -3,7 +3,7 @@ import MetricCard from "@/components/MetricCard";
 import { Swords, TriangleAlert, Building, CircleDot } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import WorldMap from "@/components/WorldMap";
+import InteractiveWorldMap from "@/components/InteractiveWorldMap"; // Updated import
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -142,7 +142,7 @@ const Dashboard: React.FC = () => {
           <CardTitle className="text-2xl font-semibold text-foreground">Global Conflict Map</CardTitle>
         </CardHeader>
         <CardContent>
-          <WorldMap conflictLocations={conflictLocations || []} />
+          <InteractiveWorldMap conflictLocations={conflictLocations || []} />
         </CardContent>
       </Card>
 
