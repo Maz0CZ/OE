@@ -9,7 +9,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE OR REPLACE FUNCTION public.get_user_role()
 RETURNS text
 LANGUAGE plpgsql
-SECURITY DEFINER -- IMPORTANT: Runs with definer's privileges to avoid RLS recursion on profiles table
+SECURITY DEFINER
+SET search_path = public, pg_temp -- Explicitly set search path to bypass RLS
 AS $$
 DECLARE
     user_id uuid := auth.uid();
@@ -18,11 +19,14 @@ BEGIN
     IF user_id IS NULL THEN
         RETURN 'guest';
     END IF;
+    -- The SELECT statement here will bypass RLS because of SECURITY DEFINER
     SELECT role INTO user_role FROM public.profiles WHERE id = user_id;
     RETURN COALESCE(user_role, 'user'); -- Default to 'user' if role is null
 END;
 $$;
 
+-- Ensure the function is owned by postgres (superuser)
+ALTER FUNCTION public.get_user_role() OWNER TO postgres;
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION public.get_user_role() TO authenticated;
 
@@ -30,7 +34,8 @@ GRANT EXECUTE ON FUNCTION public.get_user_role() TO authenticated;
 CREATE OR REPLACE FUNCTION public.is_user_role(role_name text)
 RETURNS boolean
 LANGUAGE plpgsql
-SECURITY DEFINER -- IMPORTANT: Runs with definer's privileges to avoid RLS recursion on profiles table
+SECURITY DEFINER
+SET search_path = public, pg_temp -- Explicitly set search path to bypass RLS
 AS $$
 DECLARE
     current_user_role text;
@@ -40,6 +45,8 @@ BEGIN
 END;
 $$;
 
+-- Ensure the function is owned by postgres (superuser)
+ALTER FUNCTION public.is_user_role(text) OWNER TO postgres;
 -- Grant execute permission to authenticated users
 GRANT EXECUTE ON FUNCTION public.is_user_role(text) TO authenticated;
 
@@ -93,26 +100,20 @@ $$;
 -- Enable RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Policies for profiles (idempotent)
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Public profiles are viewable by everyone.' AND tablename='profiles') THEN
-        CREATE POLICY "Public profiles are viewable by everyone." ON public.profiles
-          FOR SELECT USING (true);
-    END IF;
+-- Policies for profiles (robust update)
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone." ON public.profiles;
+CREATE POLICY "Public profiles are viewable by everyone." ON public.profiles
+  FOR SELECT USING (true);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Users can update own profile.' AND tablename='profiles') THEN
-        CREATE POLICY "Users can update own profile." ON public.profiles
-          FOR UPDATE USING (auth.uid() = id);
-    END IF;
+DROP POLICY IF EXISTS "Users can update own profile." ON public.profiles;
+CREATE POLICY "Users can update own profile." ON public.profiles
+  FOR UPDATE USING (auth.uid() = id);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Admins can manage all profiles.' AND tablename='profiles') THEN
-        CREATE POLICY "Admins can manage all profiles." ON public.profiles
-          FOR ALL USING (public.is_user_role('admin'))
-          WITH CHECK (public.is_user_role('admin'));
-    END IF;
-END
-$$;
+DROP POLICY IF EXISTS "Admins can manage all profiles." ON public.profiles;
+CREATE POLICY "Admins can manage all profiles." ON public.profiles
+  FOR ALL USING (public.is_user_role('admin'))
+  WITH CHECK (public.is_user_role('admin'));
+
 
 -------------------------
 -- POSTS TABLE
@@ -153,40 +154,31 @@ $$;
 
 ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
 
--- Policies for posts (idempotent)
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Authenticated users can create posts.' AND tablename='posts') THEN
-        CREATE POLICY "Authenticated users can create posts." ON public.posts
-          FOR INSERT WITH CHECK (auth.uid() = author_id);
-    END IF;
+-- Policies for posts (robust update)
+DROP POLICY IF EXISTS "Authenticated users can create posts." ON public.posts;
+CREATE POLICY "Authenticated users can create posts." ON public.posts
+  FOR INSERT WITH CHECK (auth.uid() = author_id);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Approved posts are viewable by everyone.' AND tablename='posts') THEN
-        CREATE POLICY "Approved posts are viewable by everyone." ON public.posts
-          FOR SELECT USING (moderation_status = 'approved' OR auth.uid() = author_id OR public.is_user_role('admin') OR public.is_user_role('moderator'));
-    END IF;
+DROP POLICY IF EXISTS "Approved posts are viewable by everyone." ON public.posts;
+CREATE POLICY "Approved posts are viewable by everyone." ON public.posts
+  FOR SELECT USING (moderation_status = 'approved' OR auth.uid() = author_id OR public.is_user_role('admin') OR public.is_user_role('moderator'));
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Authors can update own posts.' AND tablename='posts') THEN
-        CREATE POLICY "Authors can update own posts." ON public.posts
-          FOR UPDATE USING (auth.uid() = author_id);
-    END IF;
+DROP POLICY IF EXISTS "Authors can update own posts." ON public.posts;
+CREATE POLICY "Authors can update own posts." ON public.posts
+  FOR UPDATE USING (auth.uid() = author_id);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Admins and moderators can update all posts.' AND tablename='posts') THEN
-        CREATE POLICY "Admins and moderators can update all posts." ON public.posts
-          FOR UPDATE USING (public.is_user_role('admin') OR public.is_user_role('moderator'));
-    END IF;
+DROP POLICY IF EXISTS "Admins and moderators can update all posts." ON public.posts;
+CREATE POLICY "Admins and moderators can update all posts." ON public.posts
+  FOR UPDATE USING (public.is_user_role('admin') OR public.is_user_role('moderator'));
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Authors can delete own pending posts.' AND tablename='posts') THEN
-        CREATE POLICY "Authors can delete own pending posts." ON public.posts
-          FOR DELETE USING (auth.uid() = author_id AND moderation_status = 'pending');
-    END IF;
+DROP POLICY IF EXISTS "Authors can delete own pending posts." ON public.posts;
+CREATE POLICY "Authors can delete own pending posts." ON public.posts
+  FOR DELETE USING (auth.uid() = author_id AND moderation_status = 'pending');
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Admins and moderators can delete any post.' AND tablename='posts') THEN
-        CREATE POLICY "Admins and moderators can delete any post." ON public.posts
-          FOR DELETE USING (public.is_user_role('admin') OR public.is_user_role('moderator'));
-    END IF;
-END
-$$;
+DROP POLICY IF EXISTS "Admins and moderators can delete any post." ON public.posts;
+CREATE POLICY "Admins and moderators can delete any post." ON public.posts
+  FOR DELETE USING (public.is_user_role('admin') OR public.is_user_role('moderator'));
+
 
 -------------------------
 -- POST_REACTIONS TABLE
@@ -202,24 +194,19 @@ CREATE TABLE IF NOT EXISTS public.post_reactions (
 
 ALTER TABLE public.post_reactions ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Authenticated users can create reactions.' AND tablename='post_reactions') THEN
-        CREATE POLICY "Authenticated users can create reactions." ON public.post_reactions
-          FOR INSERT WITH CHECK (auth.uid() = user_id);
-    END IF;
+-- Policies for post_reactions (robust update)
+DROP POLICY IF EXISTS "Authenticated users can create reactions." ON public.post_reactions;
+CREATE POLICY "Authenticated users can create reactions." ON public.post_reactions
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Reactions are viewable by everyone.' AND tablename='post_reactions') THEN
-        CREATE POLICY "Reactions are viewable by everyone." ON public.post_reactions
-          FOR SELECT USING (true);
-    END IF;
+DROP POLICY IF EXISTS "Reactions are viewable by everyone." ON public.post_reactions;
+CREATE POLICY "Reactions are viewable by everyone." ON public.post_reactions
+  FOR SELECT USING (true);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Users can manage own reactions.' AND tablename='post_reactions') THEN
-        CREATE POLICY "Users can manage own reactions." ON public.post_reactions
-          FOR ALL USING (auth.uid() = user_id);
-    END IF;
-END
-$$;
+DROP POLICY IF EXISTS "Users can manage own reactions." ON public.post_reactions;
+CREATE POLICY "Users can manage own reactions." ON public.post_reactions
+  FOR ALL USING (auth.uid() = user_id);
+
 
 -------------------------
 -- COMMENTS TABLE
@@ -234,29 +221,23 @@ CREATE TABLE IF NOT EXISTS public.comments (
 
 ALTER TABLE public.comments ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Authenticated users can create comments.' AND tablename='comments') THEN
-        CREATE POLICY "Authenticated users can create comments." ON public.comments
-          FOR INSERT WITH CHECK (auth.uid() = author_id);
-    END IF;
+-- Policies for comments (robust update)
+DROP POLICY IF EXISTS "Authenticated users can create comments." ON public.comments;
+CREATE POLICY "Authenticated users can create comments." ON public.comments
+  FOR INSERT WITH CHECK (auth.uid() = author_id);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Comments are viewable by everyone.' AND tablename='comments') THEN
-        CREATE POLICY "Comments are viewable by everyone." ON public.comments
-          FOR SELECT USING (true);
-    END IF;
+DROP POLICY IF EXISTS "Comments are viewable by everyone." ON public.comments;
+CREATE POLICY "Comments are viewable by everyone." ON public.comments
+  FOR SELECT USING (true);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Authors can manage own comments.' AND tablename='comments') THEN
-        CREATE POLICY "Authors can manage own comments." ON public.comments
-          FOR ALL USING (auth.uid() = author_id);
-    END IF;
+DROP POLICY IF EXISTS "Authors can manage own comments." ON public.comments;
+CREATE POLICY "Authors can manage own comments." ON public.comments
+  FOR ALL USING (auth.uid() = author_id);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Admins and moderators can delete any comment.' AND tablename='comments') THEN
-        CREATE POLICY "Admins and moderators can delete any comment." ON public.comments
-          FOR DELETE USING (public.is_user_role('admin') OR public.is_user_role('moderator'));
-    END IF;
-END
-$$;
+DROP POLICY IF EXISTS "Admins and moderators can delete any comment." ON public.comments;
+CREATE POLICY "Admins and moderators can delete any comment." ON public.comments
+  FOR DELETE USING (public.is_user_role('admin') OR public.is_user_role('moderator'));
+
 
 -------------------------
 -- CONFLICTS TABLE
@@ -276,20 +257,16 @@ CREATE TABLE IF NOT EXISTS public.conflicts (
 
 ALTER TABLE public.conflicts ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Conflicts are viewable by everyone.' AND tablename='conflicts') THEN
-        CREATE POLICY "Conflicts are viewable by everyone." ON public.conflicts
-          FOR SELECT USING (true);
-    END IF;
+-- Policies for conflicts (robust update)
+DROP POLICY IF EXISTS "Conflicts are viewable by everyone." ON public.conflicts;
+CREATE POLICY "Conflicts are viewable by everyone." ON public.conflicts
+  FOR SELECT USING (true);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Admins and reporters can manage conflicts.' AND tablename='conflicts') THEN
-        CREATE POLICY "Admins and reporters can manage conflicts." ON public.conflicts
-          FOR ALL USING (public.is_user_role('admin') OR public.is_user_role('reporter'))
-          WITH CHECK (public.is_user_role('admin') OR public.is_user_role('reporter'));
-    END IF;
-END
-$$;
+DROP POLICY IF EXISTS "Admins and reporters can manage conflicts." ON public.conflicts;
+CREATE POLICY "Admins and reporters can manage conflicts." ON public.conflicts
+  FOR ALL USING (public.is_user_role('admin') OR public.is_user_role('reporter'))
+  WITH CHECK (public.is_user_role('admin') OR public.is_user_role('reporter'));
+
 
 -------------------------
 -- VIOLATIONS TABLE
@@ -305,20 +282,16 @@ CREATE TABLE IF NOT EXISTS public.violations (
 
 ALTER TABLE public.violations ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Violations are viewable by everyone.' AND tablename='violations') THEN
-        CREATE POLICY "Violations are viewable by everyone." ON public.violations
-          FOR SELECT USING (true);
-    END IF;
+-- Policies for violations (robust update)
+DROP POLICY IF EXISTS "Violations are viewable by everyone." ON public.violations;
+CREATE POLICY "Violations are viewable by everyone." ON public.violations
+  FOR SELECT USING (true);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Admins and reporters can manage violations.' AND tablename='violations') THEN
-        CREATE POLICY "Admins and reporters can manage violations." ON public.violations
-          FOR ALL USING (public.is_user_role('admin') OR public.is_user_role('reporter'))
-          WITH CHECK (public.is_user_role('admin') OR public.is_user_role('reporter'));
-    END IF;
-END
-$$;
+DROP POLICY IF EXISTS "Admins and reporters can manage violations." ON public.violations;
+CREATE POLICY "Admins and reporters can manage violations." ON public.violations
+  FOR ALL USING (public.is_user_role('admin') OR public.is_user_role('reporter'))
+  WITH CHECK (public.is_user_role('admin') OR public.is_user_role('reporter'));
+
 
 -------------------------
 -- UN_DECLARATIONS TABLE
@@ -333,20 +306,16 @@ CREATE TABLE IF NOT EXISTS public.un_declarations (
 
 ALTER TABLE public.un_declarations ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='UN declarations are viewable by everyone.' AND tablename='un_declarations') THEN
-        CREATE POLICY "UN declarations are viewable by everyone." ON public.un_declarations
-          FOR SELECT USING (true);
-    END IF;
+-- Policies for un_declarations (robust update)
+DROP POLICY IF EXISTS "UN declarations are viewable by everyone." ON public.un_declarations;
+CREATE POLICY "UN declarations are viewable by everyone." ON public.un_declarations
+  FOR SELECT USING (true);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Admins and reporters can manage UN declarations.' AND tablename='un_declarations') THEN
-        CREATE POLICY "Admins and reporters can manage UN declarations." ON public.un_declarations
-          FOR ALL USING (public.is_user_role('admin') OR public.is_user_role('reporter'))
-          WITH CHECK (public.is_user_role('admin') OR public.is_user_role('reporter'));
-    END IF;
-END
-$$;
+DROP POLICY IF EXISTS "Admins and reporters can manage UN declarations." ON public.un_declarations;
+CREATE POLICY "Admins and reporters can manage UN declarations." ON public.un_declarations
+  FOR ALL USING (public.is_user_role('admin') OR public.is_user_role('reporter'))
+  WITH CHECK (public.is_user_role('admin') OR public.is_user_role('reporter'));
+
 
 -------------------------
 -- COUNTRIES TABLE
@@ -362,20 +331,16 @@ CREATE TABLE IF NOT EXISTS public.countries (
 
 ALTER TABLE public.countries ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Countries are viewable by everyone.' AND tablename='countries') THEN
-        CREATE POLICY "Countries are viewable by everyone." ON public.countries
-          FOR SELECT USING (true);
-    END IF;
+-- Policies for countries (robust update)
+DROP POLICY IF EXISTS "Countries are viewable by everyone." ON public.countries;
+CREATE POLICY "Countries are viewable by everyone." ON public.countries
+  FOR SELECT USING (true);
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Admins and reporters can manage countries.' AND tablename='countries') THEN
-        CREATE POLICY "Admins and reporters can manage countries." ON public.countries
-          FOR ALL USING (public.is_user_role('admin') OR public.is_user_role('reporter'))
-          WITH CHECK (public.is_user_role('admin') OR public.is_user_role('reporter'));
-    END IF;
-END
-$$;
+DROP POLICY IF EXISTS "Admins and reporters can manage countries." ON public.countries;
+CREATE POLICY "Admins and reporters can manage countries." ON public.countries
+  FOR ALL USING (public.is_user_role('admin') OR public.is_user_role('reporter'))
+  WITH CHECK (public.is_user_role('admin') OR public.is_user_role('reporter'));
+
 
 -------------------------
 -- LOGS TABLE
@@ -390,19 +355,15 @@ CREATE TABLE IF NOT EXISTS public.logs (
 
 ALTER TABLE public.logs ENABLE ROW LEVEL SECURITY;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Admins can view all logs.' AND tablename='logs') THEN
-        CREATE POLICY "Admins can view all logs." ON public.logs
-          FOR SELECT USING (public.is_user_role('admin'));
-    END IF;
+-- Policies for logs (robust update)
+DROP POLICY IF EXISTS "Admins can view all logs." ON public.logs;
+CREATE POLICY "Admins can view all logs." ON public.logs
+  FOR SELECT USING (public.is_user_role('admin'));
 
-    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname='Authenticated users can insert logs.' AND tablename='logs') THEN
-        CREATE POLICY "Authenticated users can insert logs." ON public.logs
-          FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
-    END IF;
-END
-$$;
+DROP POLICY IF EXISTS "Authenticated users can insert logs." ON public.logs;
+CREATE POLICY "Authenticated users can insert logs." ON public.logs
+  FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+
 
 -------------------------
 -- VIEW
