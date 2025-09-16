@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
 
-interface ModerationPost {
+export interface ModerationPost { // Exported the interface
   id: string;
   title: string;
   author: string;

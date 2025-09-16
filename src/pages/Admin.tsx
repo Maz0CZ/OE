@@ -23,9 +23,9 @@ interface RawSupabaseModerationPost {
   content: string;
   author_id: string;
   moderation_status: "pending" | "approved" | "rejected";
-  profiles: {
+  profiles: Array<{
     username: string;
-  } | null;
+  }> | null; // Changed to array
 }
 
 interface SystemLog {
@@ -56,13 +56,13 @@ const Admin: React.FC = () => {
         username: string;
         role: "admin" | "moderator" | "reporter" | "user" | "guest";
         status: "active" | "banned";
-        auth_users: { email: string } | null;
+        auth_users: Array<{ email: string }> | null; // Changed to array
       };
 
       return (profilesData as RawProfileData[]).map(profile => ({
         id: profile.id,
         username: profile.username,
-        email: profile.auth_users?.email || 'N/A',
+        email: profile.auth_users?.[0]?.email || 'N/A', // Access first element of array
         role: profile.role,
         status: profile.status || 'active',
       })) as UserProfile[];
@@ -85,7 +85,7 @@ const Admin: React.FC = () => {
       return (data as RawSupabaseModerationPost[]).map(post => ({
         id: post.id,
         title: post.title,
-        author: post.profiles?.username || 'Unknown', // Extract username for 'author' prop
+        author: post.profiles?.[0]?.username || 'Unknown', // Access first element of array
         content: post.content,
       })) as ModerationListItem[];
     },
