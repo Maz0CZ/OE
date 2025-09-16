@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext"; // Added useAuth import
 import Layout from "@/components/Layout";
 import Dashboard from "@/pages/Dashboard";
 import ConflictsPage from "@/pages/ConflictsPage";
