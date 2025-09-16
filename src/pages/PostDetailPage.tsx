@@ -8,6 +8,7 @@ import { ThumbsUp, ThumbsDown, MessageCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import CommentSection from "@/components/CommentSection"; // Import the new CommentSection
+import { logActivity } from "@/utils/logger"; // Import the new logger
 
 interface Post {
   id: string;
@@ -44,7 +45,10 @@ const PostDetailPage: React.FC = () => {
         .eq('id', postId)
         .single();
 
-      if (postFetchError) throw postFetchError;
+      if (postFetchError) {
+        logActivity(`Error fetching post ${postId}: ${postFetchError.message}`, 'error', currentUser?.id);
+        throw postFetchError;
+      }
 
       let userReactionType: 'like' | 'dislike' | null = null;
       if (currentUser?.id) {
@@ -57,6 +61,7 @@ const PostDetailPage: React.FC = () => {
         
         if (userReactionError && userReactionError.code !== 'PGRST116') { // Ignore "no rows found" error
           console.error("Error fetching user reaction:", userReactionError);
+          logActivity(`Error fetching user reaction for post ${postId}: ${userReactionError.message}`, 'warning', currentUser?.id);
         }
         userReactionType = userReactionData?.type || null;
       }
@@ -69,6 +74,7 @@ const PostDetailPage: React.FC = () => {
   const handleReaction = async (type: 'like' | 'dislike') => {
     if (!isAuthenticated) {
       toast.error("You must be logged in to react to posts.");
+      logActivity(`Attempted to react to post ${postId} while unauthenticated.`, 'warning');
       return;
     }
     if (!postId || !currentUser?.id) return;
@@ -84,8 +90,10 @@ const PostDetailPage: React.FC = () => {
         .eq('user_id', currentUser.id);
       if (error) {
         toast.error(`Error removing reaction: ${error.message}`);
+        logActivity(`Error removing ${type} reaction from post ${postId}: ${error.message}`, 'error', currentUser?.id);
       } else {
         toast.info(`Removed ${type} from post.`);
+        logActivity(`User ${currentUser?.username} removed ${type} from post ${postId}.`, 'info', currentUser?.id);
       }
     } else {
       // User is changing reaction or adding new reaction
@@ -94,8 +102,10 @@ const PostDetailPage: React.FC = () => {
         .upsert({ post_id: postId, user_id: currentUser.id, type }, { onConflict: 'user_id,post_id' });
       if (error) {
         toast.error(`Error adding reaction: ${error.message}`);
+        logActivity(`Error adding ${type} reaction to post ${postId}: ${error.message}`, 'error', currentUser?.id);
       } else {
         toast.success(`${type === 'like' ? 'Liked' : 'Disliked'} post!`);
+        logActivity(`User ${currentUser?.username} ${type === 'like' ? 'liked' : 'disliked'} post ${postId}.`, 'info', currentUser?.id);
       }
     }
     refetchPost(); // Refetch the post to update counts and user reaction

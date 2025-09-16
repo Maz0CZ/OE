@@ -15,6 +15,8 @@ import {
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { logActivity } from "@/utils/logger"; // Import the new logger
+import { useAuth } from "@/context/AuthContext"; // Import useAuth to get currentUser
 
 interface Conflict {
   id: string;
@@ -64,6 +66,7 @@ const getSeverityBadgeColor = (severity: Conflict["severity"]) => {
 };
 
 const ConflictsPage: React.FC = () => {
+  const { currentUser } = useAuth(); // Get currentUser for logging
   const { data: conflictsData, isLoading, error } = useQuery<Conflict[]>({
     queryKey: ['conflicts'],
     queryFn: async () => {
@@ -72,18 +75,23 @@ const ConflictsPage: React.FC = () => {
         .select('*, lat, lon, summary, wikipedia_url, conflict_type, countries_involved') // Select new columns
         .order('start_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        logActivity(`Error fetching conflicts: ${error.message}`, 'error', currentUser?.id);
+        throw error;
+      }
       return data as Conflict[];
     }
   });
 
   const handleViewDetails = (conflictId: string) => {
     toast.info(`Viewing details for conflict: ${conflictId}`);
+    logActivity(`User viewed details for conflict: ${conflictId}`, 'info', currentUser?.id);
     // In a real app, navigate to a detailed conflict page
   };
 
   const handleReportUpdate = (conflictId: string) => {
     toast.info(`Reporting update for conflict: ${conflictId}`);
+    logActivity(`User reported update for conflict: ${conflictId}`, 'info', currentUser?.id);
     // In a real app, open a form to submit an update
   };
 

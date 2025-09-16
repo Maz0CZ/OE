@@ -3,10 +3,18 @@ import { Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
-import { LogOut, Menu } from "lucide-react";
+import { LogOut, Menu, UserCircle } from "lucide-react"; // Added UserCircle icon
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar } from "@/components/Sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Import Avatar components
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; // Import DropdownMenu components
 
 const Header: React.FC = () => {
   const { isAuthenticated, currentUser, logout } = useAuth();
@@ -37,23 +45,42 @@ const Header: React.FC = () => {
 
         <div className="flex items-center space-x-4">
           {isAuthenticated && currentUser ? (
-            <>
-              <span className="text-muted-foreground hidden md:inline">
-                Welcome, <span className="font-semibold text-foreground">{currentUser.username}</span>!
-              </span>
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={currentUser.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.username}`} alt={currentUser.username} />
-                <AvatarFallback>{currentUser.username.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
-            </>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-auto px-2 flex items-center space-x-2 text-muted-foreground hover:text-foreground">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={currentUser.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.username}`} alt={currentUser.username} />
+                    <AvatarFallback>{currentUser.username.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <span className="hidden md:inline font-semibold">{currentUser.username}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-card border-highlight/20" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none text-foreground">{currentUser.username}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {currentUser.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-highlight/20" />
+                <DropdownMenuItem asChild className="hover:bg-accent hover:text-accent-foreground">
+                  <Link to="/profile" className="flex items-center">
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-highlight/20" />
+                <DropdownMenuItem onClick={logout} className="text-destructive hover:bg-destructive/20 hover:text-destructive flex items-center">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : null}
           <ThemeToggle />
-          {isAuthenticated ? (
-            <Button variant="ghost" size="icon" onClick={logout} className="text-muted-foreground hover:text-destructive">
-              <LogOut className="h-5 w-5" />
-              <span className="sr-only">Logout</span>
-            </Button>
-          ) : (
+          {!isAuthenticated && (
             <Button asChild variant="outline" className="border-highlight text-highlight hover:bg-highlight hover:text-primary-foreground">
               <Link to="/login">Login</Link>
             </Button>

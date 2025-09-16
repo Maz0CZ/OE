@@ -6,6 +6,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import InteractiveWorldMap from "@/components/InteractiveWorldMap"; // Ensure this is imported
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { logActivity } from "@/utils/logger"; // Import the new logger
+import { useAuth } from "@/context/AuthContext"; // Import useAuth to get currentUser
 
 interface ConflictSummary {
   id: string; // Added id for map markers
@@ -24,6 +26,8 @@ interface ConflictLocation {
 }
 
 const Dashboard: React.FC = () => {
+  const { currentUser } = useAuth(); // Get currentUser for logging
+
   // Fetch all conflicts for metrics, pie chart, and map
   const { data: allConflicts, isLoading: conflictsLoading, error: conflictsError } = useQuery<ConflictSummary[]>({
     queryKey: ['allConflictsSummary'],
@@ -32,7 +36,10 @@ const Dashboard: React.FC = () => {
         .from('conflicts')
         .select('id, name, status, severity, lat, lon'); // Select id and name for map markers
 
-      if (error) throw error;
+      if (error) {
+        logActivity(`Error fetching all conflicts summary: ${error.message}`, 'error', currentUser?.id);
+        throw error;
+      }
       return data as ConflictSummary[];
     }
   });
@@ -55,7 +62,10 @@ const Dashboard: React.FC = () => {
         .from('violations')
         .select('*', { count: 'exact', head: true });
 
-      if (error) throw error;
+      if (error) {
+        logActivity(`Error fetching violations count: ${error.message}`, 'error', currentUser?.id);
+        throw error;
+      }
       return count || 0;
     }
   });
@@ -68,7 +78,10 @@ const Dashboard: React.FC = () => {
         .from('un_declarations')
         .select('*', { count: 'exact', head: true });
 
-      if (error) throw error;
+      if (error) {
+        logActivity(`Error fetching UN declarations count: ${error.message}`, 'error', currentUser?.id);
+        throw error;
+      }
       return count || 0;
     }
   });
@@ -100,7 +113,10 @@ const Dashboard: React.FC = () => {
         .order('created_at', { ascending: false })
         .limit(5); // Get only the 5 most recent logs
 
-      if (error) throw error;
+      if (error) {
+        logActivity(`Error fetching recent logs: ${error.message}`, 'error', currentUser?.id);
+        throw error;
+      }
       return data;
     }
   });

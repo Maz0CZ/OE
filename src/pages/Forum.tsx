@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { logActivity } from "@/utils/logger"; // Import the new logger
 
 
 interface Post {
@@ -42,7 +43,10 @@ const Forum: React.FC = () => {
         .eq('moderation_status', 'approved')
         .order('created_at', { ascending: false });
       
-      if (postsError) throw postsError;
+      if (postsError) {
+        logActivity(`Error fetching forum posts: ${postsError.message}`, 'error', currentUser?.id);
+        throw postsError;
+      }
 
       // For each post, fetch the current user's reaction separately
       const postsWithReactions = await Promise.all(postsData.map(async (post) => {
@@ -57,6 +61,7 @@ const Forum: React.FC = () => {
           
           if (userReactionError && userReactionError.code !== 'PGRST116') { // Ignore "no rows found" error
             console.error("Error fetching user reaction:", userReactionError);
+            logActivity(`Error fetching user reaction for post ${post.id}: ${userReactionError.message}`, 'warning', currentUser?.id);
           }
           userReactionType = userReactionData?.type || null;
         }
@@ -89,9 +94,11 @@ const Forum: React.FC = () => {
       setNewPostContent("")
       queryClient.invalidateQueries({ queryKey: ['forumPosts'] }); // Invalidate to refetch posts
       toast.success("Post created successfully! It will be visible after moderation.")
+      logActivity(`User ${currentUser?.username} created a new post.`, 'info', currentUser?.id);
     },
     onError: (error) => {
       toast.error(`Error creating post: ${error.message}`)
+      logActivity(`Error creating post: ${error.message}`, 'error', currentUser?.id);
     }
   })
 
@@ -107,6 +114,7 @@ const Forum: React.FC = () => {
   const handleReaction = async (postId: string, type: 'like' | 'dislike') => {
     if (!isAuthenticated) {
       toast.error("You must be logged in to react to posts.");
+      logActivity(`Attempted to react to post ${postId} while unauthenticated.`, 'warning');
       return;
     }
     if (!currentUser?.id) return;
@@ -123,8 +131,10 @@ const Forum: React.FC = () => {
         .eq('user_id', currentUser.id);
       if (error) {
         toast.error(`Error removing reaction: ${error.message}`);
+        logActivity(`Error removing ${type} reaction from post ${postId}: ${error.message}`, 'error', currentUser?.id);
       } else {
         toast.info(`Removed ${type} from post.`);
+        logActivity(`User ${currentUser?.username} removed ${type} from post ${postId}.`, 'info', currentUser?.id);
       }
     } else {
       // User is changing reaction or adding new reaction
@@ -133,8 +143,10 @@ const Forum: React.FC = () => {
         .upsert({ post_id: postId, user_id: currentUser.id, type }, { onConflict: 'user_id,post_id' });
       if (error) {
         toast.error(`Error adding reaction: ${error.message}`);
+        logActivity(`Error adding ${type} reaction to post ${postId}: ${error.message}`, 'error', currentUser?.id);
       } else {
         toast.success(`${type === 'like' ? 'Liked' : 'Disliked'} post!`);
+        logActivity(`User ${currentUser?.username} ${type === 'like' ? 'liked' : 'disliked'} post ${postId}.`, 'info', currentUser?.id);
       }
     }
     queryClient.invalidateQueries({ queryKey: ['forumPosts'] }); // Refetch to update counts and user reaction

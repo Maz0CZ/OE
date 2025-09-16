@@ -15,6 +15,7 @@ import CountriesPage from "./pages/CountriesPage";
 import ViolationsPage from "./pages/ViolationsPage";
 import UNDeclarationsPage from "./pages/UNDeclarationsPage";
 import PostDetailPage from "./pages/PostDetailPage";
+import ProfilePage from "./pages/ProfilePage"; // Import the new ProfilePage
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -103,6 +104,14 @@ function App() {
                 element={
                   <Layout>
                     <UNDeclarationsPage />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/profile" // New route for ProfilePage
+                element={
+                  <Layout>
+                    <ProfilePage />
                   </Layout>
                 }
               />

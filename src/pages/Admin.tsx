@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
+import { logActivity } from "@/utils/logger"; // Import the new logger
 
 interface UserProfile {
   id: string;
@@ -47,7 +48,10 @@ const Admin: React.FC = () => {
         .from('profiles')
         .select('id, username, role, status, auth_users:id(email)'); // Join with auth.users to get email
 
-      if (profilesError) throw profilesError;
+      if (profilesError) {
+        logActivity(`Error fetching admin users: ${profilesError.message}`, 'error', currentUser?.id);
+        throw profilesError;
+      }
 
       // Map to UserProfile, assuming 'status' is now on profiles table
       return profilesData.map(profile => ({
@@ -70,7 +74,10 @@ const Admin: React.FC = () => {
         .select('id, title, content, author_id, moderation_status, profiles(username)')
         .eq('moderation_status', 'pending'); // Filter for pending moderation posts
 
-      if (error) throw error;
+      if (error) {
+        logActivity(`Error fetching moderation posts: ${error.message}`, 'error', currentUser?.id);
+        throw error;
+      }
       return data as ModerationPost[];
     },
     enabled: isAdmin || isModerator, // Only fetch if user is admin or moderator
@@ -85,21 +92,14 @@ const Admin: React.FC = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        logActivity(`Error fetching system logs: ${error.message}`, 'error', currentUser?.id);
+        throw error;
+      }
       return data as SystemLog[];
     },
     enabled: isAdmin, // Only fetch if user is admin
   });
-
-  // Helper to log activity to Supabase
-  const logActivity = async (message: string, level: string = 'info') => {
-    await supabase.from('logs').insert({
-      message,
-      user_id: currentUser?.id || null,
-      log_level: level,
-    });
-    queryClient.invalidateQueries({ queryKey: ['systemLogs'] });
-  };
 
   // Mutations for user actions
   const banUserMutation = useMutation({
@@ -113,10 +113,13 @@ const Admin: React.FC = () => {
     },
     onSuccess: (data, userId) => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
-      logActivity(`User '${userId}' banned by ${currentUser?.username}.`, 'warning');
+      logActivity(`User '${userId}' banned by ${currentUser?.username}.`, 'warning', currentUser?.id);
       toast.success(`User ${userId} has been banned.`);
     },
-    onError: (error) => toast.error(`Error banning user: ${error.message}`),
+    onError: (error) => {
+      logActivity(`Error banning user: ${error.message}`, 'error', currentUser?.id);
+      toast.error(`Error banning user: ${error.message}`);
+    },
   });
 
   const unbanUserMutation = useMutation({
@@ -130,10 +133,13 @@ const Admin: React.FC = () => {
     },
     onSuccess: (data, userId) => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
-      logActivity(`User '${userId}' unbanned by ${currentUser?.username}.`, 'info');
+      logActivity(`User '${userId}' unbanned by ${currentUser?.username}.`, 'info', currentUser?.id);
       toast.success(`User ${userId} has been unbanned.`);
     },
-    onError: (error) => toast.error(`Error unbanning user: ${error.message}`),
+    onError: (error) => {
+      logActivity(`Error unbanning user: ${error.message}`, 'error', currentUser?.id);
+      toast.error(`Error unbanning user: ${error.message}`);
+    },
   });
 
   // Mutations for post moderation
@@ -149,10 +155,13 @@ const Admin: React.FC = () => {
     onSuccess: (data, postId) => {
       queryClient.invalidateQueries({ queryKey: ['moderationPosts'] });
       queryClient.invalidateQueries({ queryKey: ['forumPosts'] }); // Also invalidate forum posts
-      logActivity(`Post '${postId}' deleted by ${currentUser?.username}.`, 'warning');
+      logActivity(`Post '${postId}' deleted by ${currentUser?.username}.`, 'warning', currentUser?.id);
       toast.success(`Post ${postId} has been deleted.`);
     },
-    onError: (error) => toast.error(`Error deleting post: ${error.message}`),
+    onError: (error) => {
+      logActivity(`Error deleting post: ${error.message}`, 'error', currentUser?.id);
+      toast.error(`Error deleting post: ${error.message}`);
+    },
   });
 
   const reviewPostMutation = useMutation({
@@ -167,10 +176,13 @@ const Admin: React.FC = () => {
     onSuccess: (data, { postId, status }) => {
       queryClient.invalidateQueries({ queryKey: ['moderationPosts'] });
       queryClient.invalidateQueries({ queryKey: ['forumPosts'] });
-      logActivity(`${currentUser?.username} set post '${postId}' status to '${status}'.`, 'info');
+      logActivity(`${currentUser?.username} set post '${postId}' status to '${status}'.`, 'info', currentUser?.id);
       toast.info(`Post ${postId} has been marked as ${status}.`);
     },
-    onError: (error) => toast.error(`Error reviewing post: ${error.message}`),
+    onError: (error) => {
+      logActivity(`Error reviewing post: ${error.message}`, 'error', currentUser?.id);
+      toast.error(`Error reviewing post: ${error.message}`);
+    },
   });
 
   if (authLoading || usersLoading || postsLoading || logsLoading) {

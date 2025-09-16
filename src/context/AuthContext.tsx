@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 import { User as SupabaseUser } from "@supabase/supabase-js";
+import { logActivity } from "@/utils/logger"; // Import the new logger
 
 export type UserRole = "admin" | "moderator" | "reporter" | "user" | "guest";
 
@@ -10,6 +11,7 @@ interface UserProfile {
   username: string;
   role: UserRole;
   avatar_url?: string;
+  email: string; // Added email to UserProfile
 }
 
 interface AuthContextType {
@@ -35,8 +37,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (event, session) => {
         if (session?.user) {
           await fetchUserProfile(session.user);
+          logActivity(`User authenticated: ${session.user.email}`, 'info', session.user.id);
         } else {
           setCurrentUser(null);
+          logActivity('User unauthenticated', 'info');
         }
         setIsLoading(false);
       }
@@ -46,11 +50,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: { session }, error } = await supabase.auth.getSession();
       if (session?.user) {
         await fetchUserProfile(session.user);
+        logActivity(`Session found for user: ${session.user.email}`, 'info', session.user.id);
       } else {
         setCurrentUser(null);
+        logActivity('No active session found', 'info');
       }
       setIsLoading(false);
-      if (error) console.error("Error getting session:", error.message);
+      if (error) {
+        console.error("Error getting session:", error.message);
+        logActivity(`Error getting session: ${error.message}`, 'error');
+      }
     };
 
     getSession();
@@ -69,11 +78,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) {
       console.error("Error fetching user profile:", error.message);
+      logActivity(`Error fetching profile for user ${user.id}: ${error.message}`, 'error', user.id);
       return;
     }
 
     if (data) {
-      setCurrentUser({ id: user.id, ...data });
+      setCurrentUser({ id: user.id, email: user.email || 'N/A', ...data });
     }
   };
 
@@ -84,11 +94,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) {
       toast.error(error.message);
+      logActivity(`Login failed for ${email}: ${error.message}`, 'warning');
       return false;
     }
     if (data.user) {
       await fetchUserProfile(data.user);
       toast.success("Logged in successfully!");
+      logActivity(`User ${email} logged in successfully.`, 'info', data.user.id);
       return true;
     }
     return false;
@@ -110,11 +122,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) {
       toast.error(error.message);
+      logActivity(`Registration failed for ${email}: ${error.message}`, 'warning');
       return false;
     }
 
     if (data.user) {
+      // Supabase automatically creates a profile on signup if options.data is used
+      // We still need to fetch it to set currentUser correctly
+      await fetchUserProfile(data.user);
       toast.success("Registration successful! Welcome to OpenEyes.");
+      logActivity(`New user registered: ${email} (ID: ${data.user.id})`, 'info', data.user.id);
       return true;
     }
     return false;
@@ -122,14 +139,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async (): Promise<void> => {
     setIsLoading(true);
+    const userId = currentUser?.id;
+    const username = currentUser?.username;
     const { error } = await supabase.auth.signOut();
     setIsLoading(false);
 
     if (error) {
       toast.error(error.message);
+      logActivity(`Logout failed for user ${username}: ${error.message}`, 'error', userId);
     } else {
       setCurrentUser(null);
       toast.info("Logged out.");
+      logActivity(`User ${username} logged out.`, 'info', userId);
     }
   };
 

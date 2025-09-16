@@ -3,6 +3,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import CountryCard from "@/components/CountryCard"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/lib/supabaseClient"
+import { logActivity } from "@/utils/logger"; // Import the new logger
+import { useAuth } from "@/context/AuthContext"; // Import useAuth to get currentUser
 
 interface Country {
   id: string;
@@ -14,6 +16,7 @@ interface Country {
 }
 
 const CountriesPage = () => {
+  const { currentUser } = useAuth(); // Get currentUser for logging
   const { data: countriesData, isLoading, error } = useQuery<Country[]>({
     queryKey: ['countries'],
     queryFn: async () => {
@@ -22,7 +25,10 @@ const CountriesPage = () => {
         .select('*')
         .order('name', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        logActivity(`Error fetching countries: ${error.message}`, 'error', currentUser?.id);
+        throw error;
+      }
       return data as Country[];
     }
   });
