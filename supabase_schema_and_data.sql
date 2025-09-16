@@ -259,7 +259,12 @@ CREATE TABLE IF NOT EXISTS public.conflicts (
   casualties integer, -- Changed to integer
   involved_parties text[], -- Changed to text[] (ARRAY in schema is equivalent)
   lat double precision,
-  lon double precision
+  lon double precision,
+  -- New columns for Wikipedia data
+  summary text,
+  wikipedia_url text,
+  conflict_type text,
+  countries_involved text[]
 );
 
 ALTER TABLE public.conflicts ENABLE ROW LEVEL SECURITY;
@@ -461,8 +466,8 @@ BEGIN
 END $$;
 
 -- Insert dummy conflicts
-INSERT INTO public.conflicts (name, region, status, severity, start_date, casualties, involved_parties, lat, lon) VALUES
-('Syrian Civil War', 'Middle East', 'active', 'critical', '2011-03-15', 500000, ARRAY['Syrian Government', 'Rebel Groups', 'ISIS'], 34.8021, 38.9968),
-('War in Ukraine', 'Europe', 'active', 'critical', '2014-02-20', 100000, ARRAY['Ukraine', 'Russia'], 48.3794, 31.1656),
-('Yemen Civil War', 'Middle East', 'active', 'high', '2014-09-19', 377000, ARRAY['Houthi Movement', 'Saudi-led Coalition'], 15.5527, 48.5164)
+INSERT INTO public.conflicts (name, region, status, severity, start_date, casualties, involved_parties, lat, lon, summary, wikipedia_url, conflict_type, countries_involved) VALUES
+('Syrian Civil War', 'Middle East', 'active', 'critical', '2011-03-15', 500000, ARRAY['Syrian Government', 'Rebel Groups', 'ISIS'], 34.8021, 38.9968, 'Ongoing multi-sided armed conflict in Syria fought between the Syrian Arab Republic led by President Bashar al-Assad and various domestic and foreign forces.', 'https://en.wikipedia.org/wiki/Syrian_civil_war', 'Civil War', ARRAY['Syria']),
+('War in Ukraine', 'Europe', 'active', 'critical', '2014-02-20', 100000, ARRAY['Ukraine', 'Russia'], 48.3794, 31.1656, 'An ongoing armed conflict that began in February 2014, primarily involving Russia and Ukraine.', 'https://en.wikipedia.org/wiki/Russo-Ukrainian_War', 'Interstate War', ARRAY['Ukraine', 'Russia']),
+('Yemen Civil War', 'Middle East', 'active', 'high', '2014-09-19', 377000, ARRAY['Houthi Movement', 'Saudi-led Coalition'], 15.5527, 48.5164, 'An ongoing multi-sided civil war that began in late 2014, primarily fought between the Abdrabbuh Mansur Hadi-led Yemeni government and the Houthi armed movement.', 'https://en.wikipedia.org/wiki/Yemeni_Civil_War_(2014%E2%80%93present)', 'Civil War', ARRAY['Yemen', 'Saudi Arabia', 'United Arab Emirates'])
 ON CONFLICT (id) DO NOTHING;

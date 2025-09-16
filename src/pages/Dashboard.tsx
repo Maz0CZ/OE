@@ -3,7 +3,7 @@ import MetricCard from "@/components/MetricCard";
 import { Swords, TriangleAlert, Building, CircleDot } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-import InteractiveWorldMap from "@/components/InteractiveWorldMap"; // Updated import
+import InteractiveWorldMap from "@/components/InteractiveWorldMap";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -17,36 +17,33 @@ interface ConflictLocation {
 interface ConflictSummary {
   status: string;
   severity: string;
+  lat: number | null; // Ensure lat/lon are included for map data
+  lon: number | null;
 }
 
 const Dashboard: React.FC = () => {
-  // Fetch conflict locations for the map
-  const { data: conflictLocations, isLoading: mapLoading, error: mapError } = useQuery<ConflictLocation[]>({
-    queryKey: ['conflictLocations'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('conflicts')
-        .select('id, name, lat, lon')
-        .not('lat', 'is', null) // Only get conflicts with lat/lon
-        .not('lon', 'is', null);
-
-      if (error) throw error;
-      return data as ConflictLocation[];
-    }
-  });
-
-  // Fetch all conflicts for metrics and pie chart
+  // Fetch all conflicts for metrics, pie chart, and map
   const { data: allConflicts, isLoading: conflictsLoading, error: conflictsError } = useQuery<ConflictSummary[]>({
     queryKey: ['allConflictsSummary'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('conflicts')
-        .select('status, severity');
+        .select('status, severity, lat, lon'); // Select lat/lon for map
 
       if (error) throw error;
       return data as ConflictSummary[];
     }
   });
+
+  // Filter conflict locations for the map
+  const conflictLocations: ConflictLocation[] = (allConflicts || [])
+    .filter(c => c.lat !== null && c.lon !== null)
+    .map(c => ({
+      id: c.id, // Assuming id is available in ConflictSummary or can be derived
+      name: c.name, // Assuming name is available
+      lat: c.lat!,
+      lon: c.lon!,
+    }));
 
   // Fetch count of violations
   const { data: violationsCount, isLoading: violationsLoading, error: violationsError } = useQuery<number>({
@@ -106,7 +103,7 @@ const Dashboard: React.FC = () => {
     }
   });
 
-  if (mapLoading || conflictsLoading || violationsLoading || unDeclarationsLoading || logsLoading) {
+  if (conflictsLoading || violationsLoading || unDeclarationsLoading || logsLoading) {
     return (
       <div className="space-y-8 text-center">
         <h1 className="text-5xl font-extrabold text-foreground">Global Overview</h1>
@@ -115,11 +112,11 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  if (mapError || conflictsError || violationsError || unDeclarationsError || logsError) {
+  if (conflictsError || violationsError || unDeclarationsError || logsError) {
     return (
       <div className="space-y-8 text-center">
         <h1 className="text-5xl font-extrabold text-foreground">Global Overview</h1>
-        <p className="text-lg text-destructive">Error loading dashboard: {mapError?.message || conflictsError?.message || violationsError?.message || unDeclarationsError?.message || logsError?.message}</p>
+        <p className="text-lg text-destructive">Error loading dashboard: {conflictsError?.message || violationsError?.message || unDeclarationsError?.message || logsError?.message}</p>
       </div>
     );
   }
