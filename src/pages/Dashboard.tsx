@@ -48,12 +48,35 @@ const Dashboard: React.FC = () => {
     }
   });
 
+  // Fetch count of violations
+  const { data: violationsCount, isLoading: violationsLoading, error: violationsError } = useQuery<number>({
+    queryKey: ['violationsCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('violations')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) throw error;
+      return count || 0;
+    }
+  });
+
+  // Fetch count of UN declarations
+  const { data: unDeclarationsCount, isLoading: unDeclarationsLoading, error: unDeclarationsError } = useQuery<number>({
+    queryKey: ['unDeclarationsCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('un_declarations')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) throw error;
+      return count || 0;
+    }
+  });
+
   // Calculate metrics
   const activeConflicts = allConflicts?.filter(c => c.status === 'active').length || 0;
   const criticalSeverityConflicts = allConflicts?.filter(c => c.severity === 'critical').length || 0;
-  // Placeholder for violations and UN declarations, as these would come from other tables
-  const violationsReported = 623; // Placeholder
-  const unDeclarations = 49; // Placeholder
 
   // Prepare data for Pie Chart
   const severityCounts = allConflicts?.reduce((acc, conflict) => {
@@ -83,7 +106,7 @@ const Dashboard: React.FC = () => {
     }
   });
 
-  if (mapLoading || conflictsLoading || logsLoading) {
+  if (mapLoading || conflictsLoading || violationsLoading || unDeclarationsLoading || logsLoading) {
     return (
       <div className="space-y-8 text-center">
         <h1 className="text-5xl font-extrabold text-foreground">Global Overview</h1>
@@ -92,11 +115,11 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  if (mapError || conflictsError || logsError) {
+  if (mapError || conflictsError || violationsError || unDeclarationsError || logsError) {
     return (
       <div className="space-y-8 text-center">
         <h1 className="text-5xl font-extrabold text-foreground">Global Overview</h1>
-        <p className="text-lg text-destructive">Error loading dashboard: {mapError?.message || conflictsError?.message || logsError?.message}</p>
+        <p className="text-lg text-destructive">Error loading dashboard: {mapError?.message || conflictsError?.message || violationsError?.message || unDeclarationsError?.message || logsError?.message}</p>
       </div>
     );
   }
@@ -109,8 +132,8 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard icon={<Swords size={48} />} value={activeConflicts} label="Active Conflicts" />
-        <MetricCard icon={<TriangleAlert size={48} />} value={violationsReported} label="Violations Reported" />
-        <MetricCard icon={<Building size={48} />} value={unDeclarations} label="UN Declarations" />
+        <MetricCard icon={<TriangleAlert size={48} />} value={violationsCount} label="Violations Reported" />
+        <MetricCard icon={<Building size={48} />} value={unDeclarationsCount} label="UN Declarations" />
         <MetricCard icon={<CircleDot size={48} className="text-red-500" />} value={criticalSeverityConflicts} label="Critical Severity" />
       </div>
 
