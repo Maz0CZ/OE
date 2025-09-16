@@ -3,10 +3,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Layout from "./components/Layout"; // Import the new Layout component
-import Index from "./pages/Index";
-import Forum from "./pages/Forum"; // Import the new Forum page
-import Admin from "./pages/Admin"; // Import the new Admin page
+import Layout from "./components/Layout";
+import Dashboard from "./pages/Dashboard"; // Import the new Dashboard page
+import Forum from "./pages/Forum";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -17,11 +17,16 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Layout> {/* Wrap routes with the Layout component */}
+        <Layout>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/forum" element={<Forum />} /> {/* Add Forum route */}
-            <Route path="/admin" element={<Admin />} /> {/* Add Admin route */}
+            <Route path="/" element={<Dashboard />} /> {/* Set Dashboard as the default route */}
+            <Route path="/forum" element={<Forum />} />
+            <Route path="/admin" element={<Admin />} />
+            {/* Placeholder routes for new navigation items */}
+            <Route path="/conflicts" element={<div className="text-foreground text-center text-2xl">Conflicts Page Placeholder</div>} />
+            <Route path="/countries" element={<div className="text-foreground text-center text-2xl">Countries Page Placeholder</div>} />
+            <Route path="/violations" element={<div className="text-foreground text-center text-2xl">Violations Page Placeholder</div>} />
+            <Route path="/un-declarations" element={<div className="text-foreground text-center text-2xl">UN Declarations Page Placeholder</div>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

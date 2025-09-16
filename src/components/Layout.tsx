@@ -1,33 +1,63 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const location = useLocation();
+
+  const navItems = [
+    { name: "Dashboard", path: "/" },
+    { name: "Conflicts", path: "/conflicts" },
+    { name: "Countries", path: "/countries" },
+    { name: "Violations", path: "/violations" },
+    { name: "UN Declarations", path: "/un-declarations" },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <header className="bg-primary text-primary-foreground p-4 shadow-md">
-        <div className="container mx-auto flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold">
-            Open<span className="text-highlight">Eyes</span>
-          </Link>
-          <nav>
-            <ul className="flex space-x-4">
-              <li>
-                <Link to="/forum" className="hover:text-highlight transition-colors">
-                  Forum
-                </Link>
-              </li>
-              <li>
-                <Link to="/admin" className="hover:text-highlight transition-colors">
-                  Admin
-                </Link>
-              </li>
+        <div className="container mx-auto flex flex-wrap justify-between items-center gap-4">
+          <div className="flex flex-col">
+            <Link to="/" className="text-2xl font-bold">
+              Open<span className="text-highlight">Eyes</span>
+            </Link>
+            <span className="text-sm text-muted-foreground">Global Conflict Monitoring</span>
+          </div>
+          <nav className="flex-grow">
+            <ul className="flex space-x-4 justify-center">
+              {navItems.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    to={item.path}
+                    className={`hover:text-highlight transition-colors ${
+                      location.pathname === item.path ? "text-highlight font-semibold" : ""
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" className="bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground">
+              Debug
+            </Button>
+            <Input
+              type="text"
+              placeholder="Search conflicts, countries..."
+              className="w-48 bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+            />
+            <Button className="bg-highlight hover:bg-purple-700 text-primary-foreground">
+              Search
+            </Button>
+          </div>
         </div>
       </header>
       <main className="flex-grow container mx-auto p-4">
