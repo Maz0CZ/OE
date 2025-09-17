@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider } from "@/context/AuthContext";
 import Layout from "@/components/Layout";
-import AuthLayout from "@/components/AuthLayout"; // Keep AuthLayout for login/register
+import AuthLayout from "@/components/AuthLayout";
 import Dashboard from "@/pages/Dashboard";
 import ConflictsPage from "@/pages/ConflictsPage";
 import Admin from "@/pages/Admin";
@@ -16,7 +16,7 @@ import ViolationsPage from "./pages/ViolationsPage";
 import UNDeclarationsPage from "./pages/UNDeclarationsPage";
 import PostDetailPage from "./pages/PostDetailPage";
 import ProfilePage from "./pages/ProfilePage";
-import WikipediaDataImporter from "./pages/WikipediaDataImporter"; // Import the new page
+import WikipediaDataImporter from "./pages/WikipediaDataImporter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -117,7 +117,7 @@ function App() {
                 }
               />
               <Route
-                path="/data-import" // New route for Wikipedia Data Importer
+                path="/data-import"
                 element={
                   <Layout>
                     <WikipediaDataImporter />

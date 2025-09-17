@@ -6,7 +6,6 @@ import {
   Marker,
   ZoomableGroup,
 } from "react-simple-maps";
-import { MapPin } from "lucide-react";
 import { feature } from "topojson-client";
 import ConflictDetailModal from "./ConflictDetailModal";
 import CountryDetailModal from "./CountryDetailModal";
@@ -126,9 +125,9 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
           </Geographies>
           {conflictLocations.map(({ id, name, lat, lon }) => (
             <Marker key={id} coordinates={[lon, lat]} onClick={() => handleMarkerClick(id)}>
-              <g transform="translate(-12, -24)" className="cursor-pointer hover:scale-125 transition-transform duration-200">
-                <circle cx="12" cy="12" r="8" fill="hsl(var(--highlight))" stroke="hsl(var(--background))" strokeWidth="2" />
-                <circle cx="12" cy="12" r="4" fill="hsl(var(--highlight-foreground))" />
+              <g className="cursor-pointer">
+                <circle cx="0" cy="0" r="8" fill="hsl(var(--highlight))" stroke="hsl(var(--background))" strokeWidth="2" />
+                <circle cx="0" cy="0" r="4" fill="hsl(var(--highlight-foreground))" />
                 <title>{name}</title>
               </g>
             </Marker>
