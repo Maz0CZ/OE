@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ArrowUpDown, MoreHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, ChevronLeft, ChevronRight, PlusCircle } from "lucide-react"; // Added PlusCircle
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +26,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { logActivity } from "@/utils/logger";
 import { useAuth } from "@/context/AuthContext";
 import ConflictDetailModal from "@/components/ConflictDetailModal";
+import AddConflictModal from "@/components/AddConflictModal"; // Import new modal
 import { cn } from "@/lib/utils"; // Import cn for conditional class names
 
 interface Conflict {
@@ -79,8 +80,9 @@ const getSeverityBadgeColor = (severity: Conflict["severity"]) => {
 };
 
 const ConflictsPage: React.FC = () => {
-  const { currentUser } = useAuth();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { currentUser, isAdmin, isReporter } = useAuth();
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isAddConflictModalOpen, setIsAddConflictModalOpen] = useState(false); // New state for add modal
   const [selectedConflictId, setSelectedConflictId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -107,13 +109,21 @@ const ConflictsPage: React.FC = () => {
 
   const handleViewDetails = (conflictId: string) => {
     setSelectedConflictId(conflictId);
-    setIsModalOpen(true);
+    setIsDetailModalOpen(true);
     logActivity(`User opened details for conflict: ${conflictId}`, 'info', currentUser?.id, 'conflict_viewed');
   };
 
-  const handleModalClose = () => {
-    setIsModalOpen(false);
+  const handleDetailModalClose = () => {
+    setIsDetailModalOpen(false);
     setSelectedConflictId(null);
+  };
+
+  const handleAddConflictClick = () => {
+    setIsAddConflictModalOpen(true);
+  };
+
+  const handleAddConflictModalClose = () => {
+    setIsAddConflictModalOpen(false);
   };
 
   const handleReportUpdate = (conflictId: string) => {
@@ -210,7 +220,14 @@ const ConflictsPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-5xl font-extrabold text-foreground text-center">Global Conflicts</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-5xl font-extrabold text-foreground">Global Conflicts</h1>
+        {(isAdmin || isReporter) && (
+          <Button onClick={handleAddConflictClick} className="bg-highlight hover:bg-purple-700 text-primary-foreground">
+            <PlusCircle className="mr-2 h-4 w-4" /> Add New Conflict
+          </Button>
+        )}
+      </div>
       <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto">
         Overview of ongoing and historical conflicts worldwide.
       </p>
@@ -325,10 +342,17 @@ const ConflictsPage: React.FC = () => {
                             <DropdownMenuItem onClick={() => handleReportUpdate(conflict.id)} className="hover:bg-accent hover:text-accent-foreground">
                               Report Update
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator className="bg-highlight/20" />
-                            <DropdownMenuItem className="text-red-500 hover:bg-red-500/20 hover:text-red-400">
-                              Delete Conflict (Admin Only)
-                            </DropdownMenuItem>
+                            {(isAdmin || isReporter) && ( // Only show edit/delete to authorized roles
+                              <>
+                                <DropdownMenuSeparator className="bg-highlight/20" />
+                                <DropdownMenuItem className="hover:bg-accent hover:text-accent-foreground">
+                                  Edit Conflict
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-500 hover:bg-red-500/20 hover:text-red-400">
+                                  Delete Conflict
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -368,9 +392,16 @@ const ConflictsPage: React.FC = () => {
 
       <ConflictDetailModal
         conflictId={selectedConflictId}
-        isOpen={isModalOpen}
-        onClose={handleModalClose}
+        isOpen={isDetailModalOpen}
+        onClose={handleDetailModalClose}
       />
+
+      {(isAdmin || isReporter) && (
+        <AddConflictModal
+          isOpen={isAddConflictModalOpen}
+          onClose={handleAddConflictModalClose}
+        />
+      )}
     </div>
   );
 };
