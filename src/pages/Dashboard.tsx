@@ -215,8 +215,9 @@ const Dashboard: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-              </ResponsiveContainer>
-            </CardContent>
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent> {/* Added missing closing tag here */}
         </Card>
 
         <Card className="bg-card border-highlight/20">
