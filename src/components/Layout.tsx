@@ -2,6 +2,7 @@ import React from "react";
 import { useTheme } from "next-themes";
 import Header from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
+import { useAuth } from "@/context/AuthContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -9,6 +10,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { theme } = useTheme();
+  const { isLoading } = useAuth();
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -16,7 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, []);
 
   if (!mounted) {
-    return null;
+    return null; // Render nothing until theme is mounted to prevent FOUC
   }
 
   return (
@@ -25,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div className="flex flex-1">
         <main className="flex-1 p-6 lg:p-8 overflow-auto">
           <div className="max-w-7xl mx-auto">
-            {children}
+            {!isLoading && children}
           </div>
         </main>
       </div>

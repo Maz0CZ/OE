@@ -34,6 +34,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const getSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -41,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) {
           console.error("Error getting session:", error.message);
           logActivity(`Error getting session: ${error.message}`, 'error');
-          setIsLoading(false);
+          if (isMounted) setIsLoading(false);
           return;
         }
 
@@ -49,13 +51,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await fetchUserProfile(session.user);
           logActivity(`Session found for user: ${session.user.email}`, 'info', session.user.id);
         } else {
-          setCurrentUser(null);
+          if (isMounted) {
+            setCurrentUser(null);
+            setIsLoading(false);
+          }
           logActivity('No active session found', 'info');
         }
       } catch (error) {
         console.error("Unexpected error in getSession:", error);
-      } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
@@ -63,6 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+        
         if (session?.user) {
           await fetchUserProfile(session.user);
           logActivity(`User authenticated: ${session.user.email}`, 'info', session.user.id);
@@ -75,6 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     return () => {
+      isMounted = false;
       authListener.subscription.unsubscribe();
     };
   }, []);
@@ -91,6 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("Error fetching user profile:", error.message);
         logActivity(`Error fetching profile for user ${user.id}: ${error.message}`, 'error', user.id);
         setCurrentUser(null);
+        setIsLoading(false);
         return;
       }
 
@@ -101,9 +109,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...data 
         });
       }
+      setIsLoading(false);
     } catch (error) {
       console.error("Unexpected error in fetchUserProfile:", error);
       setCurrentUser(null);
+      setIsLoading(false);
     }
   };
 
@@ -115,6 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         toast.error(error.message);
         logActivity(`Login failed for ${email}: ${error.message}`, 'warning');
+        setIsLoading(false);
         return false;
       }
       
@@ -124,13 +135,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logActivity(`User ${email} logged in successfully.`, 'info', data.user.id);
         return true;
       }
+      setIsLoading(false);
       return false;
     } catch (error) {
       console.error("Unexpected error in login:", error);
       toast.error("An unexpected error occurred during login");
-      return false;
-    } finally {
       setIsLoading(false);
+      return false;
     }
   };
 
@@ -145,6 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (authError) {
         toast.error(authError.message);
         logActivity(`Registration failed for ${email}: ${authError.message}`, 'warning');
+        setIsLoading(false);
         return false;
       }
 
@@ -163,6 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error("Error creating user profile:", profileError.message);
           toast.error(`Registration successful, but failed to create profile: ${profileError.message}. Please try logging in.`);
           logActivity(`Failed to create profile for new user ${email}: ${profileError.message}`, 'error', authData.user.id);
+          setIsLoading(false);
           return false;
         }
 
@@ -171,13 +184,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logActivity(`New user registered: ${email} (ID: ${authData.user.id})`, 'info', authData.user.id);
         return true;
       }
+      setIsLoading(false);
       return false;
     } catch (error) {
       console.error("Unexpected error in register:", error);
       toast.error("An unexpected error occurred during registration");
-      return false;
-    } finally {
       setIsLoading(false);
+      return false;
     }
   };
 

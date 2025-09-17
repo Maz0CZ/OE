@@ -124,10 +124,14 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
             }
           </Geographies>
           {conflictLocations.map(({ id, name, lat, lon }) => (
-            <Marker key={id} coordinates={[lon, lat]} onClick={() => handleMarkerClick(id)}>
-              <g className="cursor-pointer">
-                <circle cx="0" cy="0" r="8" fill="hsl(var(--highlight))" stroke="hsl(var(--background))" strokeWidth="2" />
-                <circle cx="0" cy="0" r="4" fill="hsl(var(--highlight-foreground))" />
+            <Marker key={id} coordinates={[lon, lat]}>
+              <g 
+                className="cursor-pointer transition-transform duration-150 hover:scale-110"
+                onClick={() => handleMarkerClick(id)}
+                style={{ pointerEvents: 'all' }}
+              >
+                <circle cx="0" cy="0" r="6" fill="hsl(var(--highlight))" stroke="hsl(var(--background))" strokeWidth="2" />
+                <circle cx="0" cy="0" r="3" fill="hsl(var(--highlight-foreground))" />
                 <title>{name}</title>
               </g>
             </Marker>
