@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { LogOut, Menu, UserCircle } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Sidebar } from "@/components/Sidebar"; // Keep for mobile sheet
-import { DesktopNav } from "@/components/DesktopNav"; // Import DesktopNav
+import { Sidebar } from "@/components/Sidebar";
+import { DesktopNav } from "@/components/DesktopNav";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -18,13 +18,34 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const Header: React.FC = () => {
-  const { isAuthenticated, currentUser, logout } = useAuth();
+  const { isAuthenticated, currentUser, logout, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <header className="sticky top-0 z-40 w-full border-b border-highlight/20 bg-card">
+        <div className="container flex h-16 items-center justify-between py-4">
+          <div className="flex items-center space-x-4">
+            <Link to="/" className="flex items-center space-x-2">
+              <span className="text-2xl font-bold text-foreground">
+                Open<span className="text-highlight">Eyes</span>
+              </span>
+            </Link>
+          </div>
+          <div className="flex items-center space-x-4">
+            <ThemeToggle />
+            <Button variant="outline" className="border-highlight text-highlight" disabled>
+              Loading...
+            </Button>
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-highlight/20 bg-card">
       <div className="container flex h-16 items-center justify-between py-4">
         <div className="flex items-center space-x-4">
-          {/* Mobile Sidebar Toggle */}
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden">
@@ -43,8 +64,7 @@ const Header: React.FC = () => {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <DesktopNav /> {/* Render DesktopNav here */}
+          <DesktopNav />
         </div>
 
         <div className="flex items-center space-x-4">
@@ -76,18 +96,22 @@ const Header: React.FC = () => {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-highlight/20" />
-                <DropdownMenuItem onClick={logout} className="text-destructive hover:bg-destructive/20 hover:text-destructive flex items-center">
+                <DropdownMenuItem 
+                  onClick={logout} 
+                  className="text-destructive hover:bg-destructive/20 hover:text-destructive flex items-center"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : null}
-          <ThemeToggle />
-          {!isAuthenticated && (
-            <Button asChild variant="outline" className="border-highlight text-highlight hover:bg-highlight hover:text-primary-foreground">
-              <Link to="/login">Login</Link>
-            </Button>
+          ) : (
+            <>
+              <ThemeToggle />
+              <Button asChild variant="outline" className="border-highlight text-highlight hover:bg-highlight hover:text-primary-foreground">
+                <Link to="/login">Login</Link>
+              </Button>
+            </>
           )}
         </div>
       </div>

@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* White background for light theme */
-    --foreground: 222.2 47.4% 11.2%; /* Dark text for light theme */
+    --background: 0 0% 100%;
+    --foreground: 222.2 47.4% 11.2%;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 47.4% 11.2%;
@@ -13,31 +13,31 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
 
-    --primary: 222.2 47.4% 11.2%; /* Dark blue-gray for primary in light theme */
-    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 94%; /* Slightly darker light gray for secondary */
+    --secondary: 210 40% 94%;
     --secondary-foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 94%;
-    --muted-foreground: 215.4 16.3% 46.9%; /* Medium gray */
+    --muted-foreground: 215.4 16.3% 46.9%;
 
     --accent: 210 40% 94%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 0 84.2% 60.2%; /* Red */
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 89%; /* Slightly darker light gray border */
+    --border: 214.3 31.8% 89%;
     --input: 214.3 31.8% 89%;
-    --ring: 217.2 91.2% 59.8%; /* Blue ring */
+    --ring: 217.2 91.2% 59.8%;
 
     --radius: 0.5rem;
 
-    --highlight: 285 49% 63%; /* ab47bc - A vibrant purple for highlight */
-    --highlight-foreground: 0 0% 100%; /* White text on highlight */
+    --highlight: 285 49% 63%;
+    --highlight-foreground: 0 0% 100%;
 
-    --sidebar-background: 210 40% 94%; /* Light gray sidebar */
+    --sidebar-background: 210 40% 94%;
     --sidebar-foreground: 222.2 47.4% 11.2%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -48,10 +48,10 @@
   }
 
   .dark {
-    --background: 220 15% 6%; /* Darker blue-gray background */
-    --foreground: 210 40% 98%; /* Light foreground text */
+    --background: 220 15% 6%;
+    --foreground: 210 40% 98%;
 
-    --card: 220 15% 10%; /* Slightly lighter dark blue-gray for cards */
+    --card: 220 15% 10%;
     --card-foreground: 210 40% 98%;
 
     --popover: 220 15% 10%;
@@ -60,7 +60,7 @@
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 217.2 32.6% 15%; /* Darker secondary */
+    --secondary: 217.2 32.6% 15%;
     --secondary-foreground: 210 40% 98%;
 
     --muted: 217.2 32.6% 15%;
@@ -72,14 +72,14 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 15%; /* Darker border */
+    --border: 217.2 32.6% 15%;
     --input: 217.2 32.6% 15%;
     --ring: 212.7 26.8% 83.9%;
 
-    --highlight: 285 49% 63%; /* ab47bc - A vibrant purple for highlight */
-    --highlight-foreground: 0 0% 100%; /* White text on highlight */
+    --highlight: 285 49% 63%;
+    --highlight-foreground: 0 0% 100%;
 
-    --sidebar-background: 220 15% 4%; /* Even darker than main background for sidebar */
+    --sidebar-background: 220 15% 4%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -96,8 +96,24 @@
   }
 
   body {
-    /* Enhanced font stack for comprehensive emoji support */
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "Twemoji Mozilla", "EmojiOne Color", "Android Emoji";
+    /* Enhanced font stack with flag emoji support */
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "Twemoji Mozilla", "EmojiOne Color", "Android Emoji", "Symbola";
     @apply bg-background text-foreground;
   }
+}
+
+/* Flag emoji specific styling */
+.flag-emoji {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Android Emoji", "Twemoji Mozilla", "EmojiOne Color", "Symbola";
+  font-size: 2rem;
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Ensure proper rendering of country flags */
+.country-flag {
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Android Emoji", "Twemoji Mozilla", "EmojiOne Color", "Symbola";
+  font-size: 1.5rem;
+  line-height: 1;
 }

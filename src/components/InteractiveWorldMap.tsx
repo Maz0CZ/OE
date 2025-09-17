@@ -10,7 +10,6 @@ import { MapPin } from "lucide-react";
 import { feature } from "topojson-client";
 import ConflictDetailModal from "./ConflictDetailModal";
 import CountryDetailModal from "./CountryDetailModal";
-import { cn } from "@/lib/utils"; // Import cn for conditional class names
 
 interface ConflictLocation {
   id: string;
@@ -127,14 +126,9 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
           </Geographies>
           {conflictLocations.map(({ id, name, lat, lon }) => (
             <Marker key={id} coordinates={[lon, lat]} onClick={() => handleMarkerClick(id)}>
-              <g className="z-20">
-                <MapPin
-                  size={36} // Increased size
-                  stroke="hsl(var(--background))" // Added a stroke for better contrast
-                  strokeWidth={1.5} // Thicker stroke
-                  className="text-highlight drop-shadow-md cursor-pointer hover:scale-125 transition-transform duration-200"
-                  style={{ transform: "translate(-50%, -100%)" }}
-                />
+              <g transform="translate(-12, -24)" className="cursor-pointer hover:scale-125 transition-transform duration-200">
+                <circle cx="12" cy="12" r="8" fill="hsl(var(--highlight))" stroke="hsl(var(--background))" strokeWidth="2" />
+                <circle cx="12" cy="12" r="4" fill="hsl(var(--highlight-foreground))" />
                 <title>{name}</title>
               </g>
             </Marker>
