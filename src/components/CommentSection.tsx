@@ -103,7 +103,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
                 placeholder="Write your comment..."
                 value={newCommentContent}
                 onChange={(e) => setNewCommentContent(e.target.value)}
-                className="flex-1 bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground min-h-[40px]"
+                className="flex-1 bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground min-h-[40px]"
                 rows={1}
                 required
               />

@@ -125,7 +125,7 @@ const AddConflictModal: React.FC<AddConflictModalProps> = ({ isOpen, onClose }) 
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="col-span-3 bg-secondary border-secondary-foreground text-primary-foreground"
+              className="col-span-3 bg-secondary border-secondary-foreground text-foreground"
               required
             />
           </div>
@@ -137,7 +137,7 @@ const AddConflictModal: React.FC<AddConflictModalProps> = ({ isOpen, onClose }) 
               id="region"
               value={region}
               onChange={(e) => setRegion(e.target.value)}
-              className="col-span-3 bg-secondary border-secondary-foreground text-primary-foreground"
+              className="col-span-3 bg-secondary border-secondary-foreground text-foreground"
               required
             />
           </div>
@@ -146,7 +146,7 @@ const AddConflictModal: React.FC<AddConflictModalProps> = ({ isOpen, onClose }) 
               Status
             </Label>
             <Select onValueChange={(value) => setStatus(value as typeof status)} value={status}>
-              <SelectTrigger className="col-span-3 bg-secondary border-secondary-foreground text-primary-foreground">
+              <SelectTrigger className="col-span-3 bg-secondary border-secondary-foreground text-foreground">
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent className="bg-card border-highlight/20">
@@ -162,7 +162,7 @@ const AddConflictModal: React.FC<AddConflictModalProps> = ({ isOpen, onClose }) 
               Severity
             </Label>
             <Select onValueChange={(value) => setSeverity(value as typeof severity)} value={severity}>
-              <SelectTrigger className="col-span-3 bg-secondary border-secondary-foreground text-primary-foreground">
+              <SelectTrigger className="col-span-3 bg-secondary border-secondary-foreground text-foreground">
                 <SelectValue placeholder="Select severity" />
               </SelectTrigger>
               <SelectContent className="bg-card border-highlight/20">
@@ -182,7 +182,7 @@ const AddConflictModal: React.FC<AddConflictModalProps> = ({ isOpen, onClose }) 
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="col-span-3 bg-secondary border-secondary-foreground text-primary-foreground"
+              className="col-span-3 bg-secondary border-secondary-foreground text-foreground"
               required
             />
           </div>
@@ -195,7 +195,7 @@ const AddConflictModal: React.FC<AddConflictModalProps> = ({ isOpen, onClose }) 
               type="number"
               value={casualties}
               onChange={(e) => setCasualties(e.target.value)}
-              className="col-span-3 bg-secondary border-secondary-foreground text-primary-foreground"
+              className="col-span-3 bg-secondary border-secondary-foreground text-foreground"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -207,7 +207,7 @@ const AddConflictModal: React.FC<AddConflictModalProps> = ({ isOpen, onClose }) 
               placeholder="Comma-separated list (e.g., Group A, Group B)"
               value={involvedParties}
               onChange={(e) => setInvolvedParties(e.target.value)}
-              className="col-span-3 bg-secondary border-secondary-foreground text-primary-foreground min-h-[60px]"
+              className="col-span-3 bg-secondary border-secondary-foreground text-foreground min-h-[60px]"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -220,7 +220,7 @@ const AddConflictModal: React.FC<AddConflictModalProps> = ({ isOpen, onClose }) 
               step="0.000001"
               value={lat}
               onChange={(e) => setLat(e.target.value)}
-              className="col-span-3 bg-secondary border-secondary-foreground text-primary-foreground"
+              className="col-span-3 bg-secondary border-secondary-foreground text-foreground"
             />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
@@ -233,7 +233,7 @@ const AddConflictModal: React.FC<AddConflictModalProps> = ({ isOpen, onClose }) 
               step="0.000001"
               value={lon}
               onChange={(e) => setLon(e.target.value)}
-              className="col-span-3 bg-secondary border-secondary-foreground text-primary-foreground"
+              className="col-span-3 bg-secondary border-secondary-foreground text-foreground"
             />
           </div>
           <DialogFooter>

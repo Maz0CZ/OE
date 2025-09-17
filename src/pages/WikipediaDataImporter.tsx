@@ -80,7 +80,7 @@ const WikipediaDataImporter: React.FC = () => {
                 placeholder="e.g., https://en.wikipedia.org/wiki/List_of_ongoing_armed_conflicts"
                 value={wikipediaUrl}
                 onChange={(e) => setWikipediaUrl(e.target.value)}
-                className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                className="bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground"
                 required
               />
             </div>

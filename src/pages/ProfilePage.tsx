@@ -128,6 +128,7 @@ const ProfilePage: React.FC = () => {
         <p className="text-xl">You must be logged in to view your profile.</p>
       </div>
     );
+  );
   }
 
   return (
@@ -158,7 +159,7 @@ const ProfilePage: React.FC = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="bg-secondary border-secondary-foreground text-primary-foreground mt-1"
+                  className="bg-secondary border-secondary-foreground text-foreground mt-1"
                   required
                 />
               </div>
@@ -171,7 +172,7 @@ const ProfilePage: React.FC = () => {
                   type="email"
                   value={currentUser.email}
                   readOnly
-                  className="bg-secondary border-secondary-foreground text-primary-foreground mt-1"
+                  className="bg-secondary border-secondary-foreground text-foreground mt-1"
                 />
               </div>
             </div>
@@ -186,7 +187,7 @@ const ProfilePage: React.FC = () => {
                   placeholder="e.g., Senior Analyst"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="bg-secondary border-secondary-foreground text-primary-foreground mt-1"
+                  className="bg-secondary border-secondary-foreground text-foreground mt-1"
                 />
               </div>
               <div>
@@ -199,7 +200,7 @@ const ProfilePage: React.FC = () => {
                   placeholder="e.g., OpenEyes Foundation"
                   value={work}
                   onChange={(e) => setWork(e.target.value)}
-                  className="bg-secondary border-secondary-foreground text-primary-foreground mt-1"
+                  className="bg-secondary border-secondary-foreground text-foreground mt-1"
                 />
               </div>
             </div>
@@ -213,7 +214,7 @@ const ProfilePage: React.FC = () => {
                 placeholder="e.g., https://www.yourwebsite.com"
                 value={website}
                 onChange={(e) => setWebsite(e.target.value)}
-                className="bg-secondary border-secondary-foreground text-primary-foreground mt-1"
+                className="bg-secondary border-secondary-foreground text-foreground mt-1"
               />
             </div>
             <div>
@@ -226,7 +227,7 @@ const ProfilePage: React.FC = () => {
                 placeholder="e.g., https://example.com/avatar.jpg"
                 value={avatarUrl}
                 onChange={(e) => setAvatarUrl(e.target.value)}
-                className="bg-secondary border-secondary-foreground text-primary-foreground mt-1"
+                className="bg-secondary border-secondary-foreground text-foreground mt-1"
               />
             </div>
             <div>
@@ -238,7 +239,7 @@ const ProfilePage: React.FC = () => {
                 type="text"
                 value={currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)}
                 readOnly
-                className="bg-secondary border-secondary-foreground text-primary-foreground mt-1"
+                className="bg-secondary border-secondary-foreground text-foreground mt-1"
               />
             </div>
             
@@ -259,7 +260,7 @@ const ProfilePage: React.FC = () => {
                 placeholder="••••••••"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="bg-secondary border-secondary-foreground text-primary-foreground mt-1"
+                className="bg-secondary border-secondary-foreground text-foreground mt-1"
                 required
               />
             </div>
@@ -271,7 +272,7 @@ const ProfilePage: React.FC = () => {
                 placeholder="••••••••"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="bg-secondary border-secondary-foreground text-primary-foreground mt-1"
+                className="bg-secondary border-secondary-foreground text-foreground mt-1"
                 required
               />
             </div>
@@ -283,7 +284,7 @@ const ProfilePage: React.FC = () => {
                 placeholder="••••••••"
                 value={confirmNewPassword}
                 onChange={(e) => setConfirmNewPassword(e.target.value)}
-                className="bg-secondary border-secondary-foreground text-primary-foreground mt-1"
+                className="bg-secondary border-secondary-foreground text-foreground mt-1"
                 required
               />
             </div>

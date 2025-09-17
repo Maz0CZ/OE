@@ -43,7 +43,7 @@ const RegisterPage: React.FC = () => {
                 placeholder="Your unique username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                className="bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground"
                 required
               />
             </div>
@@ -55,7 +55,7 @@ const RegisterPage: React.FC = () => {
                 placeholder="your@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                className="bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground"
                 required
               />
             </div>
@@ -67,7 +67,7 @@ const RegisterPage: React.FC = () => {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                className="bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground"
                 required
               />
             </div>

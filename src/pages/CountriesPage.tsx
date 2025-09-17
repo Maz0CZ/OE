@@ -71,7 +71,7 @@ const CountriesPage = () => {
           placeholder="Search countries by name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full max-w-md bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+          className="w-full max-w-md bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground"
         />
       </div>
 

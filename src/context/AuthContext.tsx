@@ -37,6 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUserProfile = async (user: SupabaseUser) => {
+    console.log("fetchUserProfile: Starting for user ID:", user.id);
     try {
       const { data, error } = await supabase
         .from("profiles")
@@ -45,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (error) {
-        console.error("Error fetching user profile:", error.message);
+        console.error("fetchUserProfile: Error fetching user profile:", error.message);
         logActivity(`Error fetching profile for user ${user.id}: ${error.message}`, 'error', user.id);
         setCurrentUser(null);
         return;
@@ -57,48 +58,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: user.email || 'N/A', 
           ...data 
         });
+        console.log("fetchUserProfile: User profile set:", { id: user.id, email: user.email || 'N/A', ...data });
       }
     } catch (error) {
-      console.error("Unexpected error in fetchUserProfile:", error);
+      console.error("fetchUserProfile: Unexpected error in fetchUserProfile:", error);
       setCurrentUser(null);
     } finally {
       setIsLoading(false); // Ensure isLoading is set to false after profile fetch attempt
+      console.log("fetchUserProfile: isLoading set to false.");
     }
   };
 
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true); // Start loading state immediately
+    console.log("AuthContext useEffect: Initializing, isLoading set to true.");
 
     const getInitialSession = async () => {
+      console.log("AuthContext useEffect: getInitialSession starting.");
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error("Error getting initial session:", error.message);
+          console.error("AuthContext useEffect: Error getting initial session:", error.message);
           logActivity(`Error getting initial session: ${error.message}`, 'error');
           if (isMounted) {
             setCurrentUser(null);
             setIsLoading(false); // Set false if initial session check fails
+            console.log("AuthContext useEffect: Initial session error, isLoading set to false.");
           }
           return;
         }
 
         if (session?.user) {
+          console.log("AuthContext useEffect: Initial session found, user:", session.user.email);
           await fetchUserProfile(session.user); // fetchUserProfile will set isLoading(false)
           logActivity(`Initial session found for user: ${session.user.email}`, 'info', session.user.id);
         } else {
           if (isMounted) {
             setCurrentUser(null);
             setIsLoading(false); // Set false if no initial session
+            console.log("AuthContext useEffect: No initial session, isLoading set to false.");
           }
           logActivity('No initial active session found', 'info');
         }
       } catch (error) {
-        console.error("Unexpected error in getInitialSession:", error);
+        console.error("AuthContext useEffect: Unexpected error in getInitialSession:", error);
         if (isMounted) {
           setCurrentUser(null);
           setIsLoading(false);
+          console.log("AuthContext useEffect: Unexpected error in getInitialSession, isLoading set to false.");
         }
       }
     };
@@ -109,13 +118,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (event, session) => {
         if (!isMounted) return;
         
+        console.log("AuthContext onAuthStateChange: Event:", event, "Session:", session);
         setIsLoading(true); // Set loading true again for any state change
         if (session?.user) {
+          console.log("AuthContext onAuthStateChange: Session user found, fetching profile.");
           await fetchUserProfile(session.user); // fetchUserProfile will set isLoading(false)
           logActivity(`Auth state changed to authenticated for user: ${session.user.email}`, 'info', session.user.id);
         } else {
           setCurrentUser(null);
           setIsLoading(false); // Set false if unauthenticated
+          console.log("AuthContext onAuthStateChange: No session user, isLoading set to false.");
           logActivity('Auth state changed to unauthenticated', 'info');
         }
       }
@@ -124,11 +136,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       isMounted = false;
       authListener.subscription.unsubscribe();
+      console.log("AuthContext useEffect: Cleanup, auth listener unsubscribed.");
     };
   }, []); // Empty dependency array
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
+    console.log("AuthContext login: Attempting login for:", email);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       
@@ -136,19 +150,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast.error(error.message);
         logActivity(`Login failed for ${email}: ${error.message}`, 'warning');
         setIsLoading(false);
+        console.error("AuthContext login: Login error:", error.message);
         return false;
       }
       
       if (data.user) {
+        console.log("AuthContext login: User data received, fetching profile.");
         await fetchUserProfile(data.user); // fetchUserProfile will set isLoading(false)
         toast.success("Logged in successfully!");
         logActivity(`User ${email} logged in successfully.`, 'info', data.user.id);
         return true;
       }
       setIsLoading(false);
+      console.log("AuthContext login: No user data after sign-in, isLoading set to false.");
       return false;
     } catch (error) {
-      console.error("Unexpected error in login:", error);
+      console.error("AuthContext login: Unexpected error in login:", error);
       toast.error("An unexpected error occurred during login");
       setIsLoading(false);
       return false;
@@ -157,6 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (email: string, password: string, username: string): Promise<boolean> => {
     setIsLoading(true);
+    console.log("AuthContext register: Attempting registration for:", email);
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({ 
         email, 
@@ -167,10 +185,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         toast.error(authError.message);
         logActivity(`Registration failed for ${email}: ${authError.message}`, 'warning');
         setIsLoading(false);
+        console.error("AuthContext register: Registration error:", authError.message);
         return false;
       }
 
       if (authData.user) {
+        console.log("AuthContext register: User created, attempting profile creation.");
         const { error: profileError } = await supabase
           .from('profiles')
           .insert({
@@ -182,7 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
 
         if (profileError) {
-          console.error("Error creating user profile:", profileError.message);
+          console.error("AuthContext register: Error creating user profile:", profileError.message);
           toast.error(`Registration successful, but failed to create profile: ${profileError.message}. Please try logging in.`);
           logActivity(`Failed to create profile for new user ${email}: ${profileError.message}`, 'error', authData.user.id);
           setIsLoading(false);
@@ -195,9 +215,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return true;
       }
       setIsLoading(false);
+      console.log("AuthContext register: No user data after sign-up, isLoading set to false.");
       return false;
     } catch (error) {
-      console.error("Unexpected error in register:", error);
+      console.error("AuthContext register: Unexpected error in register:", error);
       toast.error("An unexpected error occurred during registration");
       setIsLoading(false);
       return false;
@@ -206,6 +227,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async (): Promise<void> => {
     setIsLoading(true);
+    console.log("AuthContext logout: Attempting logout for user:", currentUser?.email);
     try {
       const userId = currentUser?.id;
       const username = currentUser?.username;
@@ -214,16 +236,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) {
         toast.error(error.message);
         logActivity(`Logout failed for user ${username}: ${error.message}`, 'error', userId);
+        console.error("AuthContext logout: Logout error:", error.message);
       } else {
         setCurrentUser(null);
         toast.info("Logged out.");
         logActivity(`User ${username} logged out.`, 'info', userId);
+        console.log("AuthContext logout: User successfully logged out.");
       }
     } catch (error) {
-      console.error("Unexpected error in logout:", error);
+      console.error("AuthContext logout: Unexpected error in logout:", error);
       toast.error("An unexpected error occurred during logout");
     } finally {
       setIsLoading(false);
+      console.log("AuthContext logout: isLoading set to false.");
     }
   };
 

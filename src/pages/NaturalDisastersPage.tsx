@@ -177,14 +177,14 @@ const NaturalDisastersPage: React.FC = () => {
                     placeholder="e.g., Japan Earthquake"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                    className="bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground"
                     required
                   />
                 </div>
                 <div>
                   <Label htmlFor="type">Type</Label>
                   <Select onValueChange={setNewType} value={newType} required>
-                    <SelectTrigger className="w-full bg-secondary border-secondary-foreground text-primary-foreground">
+                    <SelectTrigger className="w-full bg-secondary border-secondary-foreground text-foreground">
                       <SelectValue placeholder="Select disaster type" />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-highlight/20">
@@ -209,7 +209,7 @@ const NaturalDisastersPage: React.FC = () => {
                     type="date"
                     value={newDate}
                     onChange={(e) => setNewDate(e.target.value)}
-                    className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                    className="bg-secondary border-secondary-foreground text-foreground"
                     required
                   />
                 </div>
@@ -221,21 +221,21 @@ const NaturalDisastersPage: React.FC = () => {
                     placeholder="e.g., Tokyo, Japan"
                     value={newLocation}
                     onChange={(e) => setNewLocation(e.target.value)}
-                    className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                    className="bg-secondary border-secondary-foreground text-foreground"
                     required
                   />
                 </div>
               </div>
               <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Brief description of the disaster..."
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground min-h-[80px]"
-                />
-              </div>
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Brief description of the disaster..."
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    className="bg-secondary border-secondary-foreground text-foreground min-h-[80px]"
+                  />
+                </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="casualties">Casualties</Label>
@@ -245,7 +245,7 @@ const NaturalDisastersPage: React.FC = () => {
                     placeholder="Number of casualties"
                     value={newCasualties}
                     onChange={(e) => setNewCasualties(e.target.value)}
-                    className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                    className="bg-secondary border-secondary-foreground text-foreground"
                   />
                 </div>
                 <div>
@@ -257,7 +257,7 @@ const NaturalDisastersPage: React.FC = () => {
                     placeholder="e.g., 7.0 (Richter)"
                     value={newMagnitude}
                     onChange={(e) => setNewMagnitude(e.target.value)}
-                    className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                    className="bg-secondary border-secondary-foreground text-foreground"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -270,7 +270,7 @@ const NaturalDisastersPage: React.FC = () => {
                       placeholder="e.g., 35.68"
                       value={newLat}
                       onChange={(e) => setNewLat(e.target.value)}
-                      className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                      className="bg-secondary border-secondary-foreground text-foreground"
                     />
                   </div>
                   <div>
@@ -282,7 +282,7 @@ const NaturalDisastersPage: React.FC = () => {
                       placeholder="e.g., 139.69"
                       value={newLon}
                       onChange={(e) => setNewLon(e.target.value)}
-                      className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                      className="bg-secondary border-secondary-foreground text-foreground"
                     />
                   </div>
                 </div>
@@ -300,10 +300,10 @@ const NaturalDisastersPage: React.FC = () => {
           placeholder="Search disasters by name or location..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+          className="flex-1 bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground"
         />
         <Select onValueChange={setTypeFilter} value={typeFilter}>
-          <SelectTrigger className="w-full md:w-[200px] bg-secondary border-secondary-foreground text-primary-foreground">
+          <SelectTrigger className="w-full md:w-[200px] bg-secondary border-secondary-foreground text-foreground">
             <SelectValue placeholder="Filter by Type" />
           </SelectTrigger>
           <SelectContent className="bg-card border-highlight/20">

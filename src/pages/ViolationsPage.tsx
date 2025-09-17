@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"; // Import Select components
+import { Input } from "@/components/ui/input"; // Import Input for search
 
 interface Violation {
   id: string;
@@ -24,6 +25,7 @@ interface Violation {
 const ViolationsPage = () => {
   const { currentUser } = useAuth();
   const [selectedSeverity, setSelectedSeverity] = useState<string>("all"); // New state for severity filter
+  const [searchTerm, setSearchTerm] = useState(""); // New state for search term
 
   const { data: violations, isLoading, error } = useQuery<Violation[]>({
     queryKey: ['violations'],
@@ -41,9 +43,10 @@ const ViolationsPage = () => {
     }
   });
 
-  // Filter violations based on selected severity
+  // Filter violations based on selected severity and search term
   const filteredViolations = violations?.filter(violation =>
-    selectedSeverity === "all" || violation.severity === selectedSeverity
+    (selectedSeverity === "all" || violation.severity === selectedSeverity) &&
+    (searchTerm === "" || violation.type.toLowerCase().includes(searchTerm.toLowerCase()) || violation.location.toLowerCase().includes(searchTerm.toLowerCase()) || violation.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   if (isLoading) {
@@ -73,9 +76,15 @@ const ViolationsPage = () => {
         Detailed reports and statistics on human rights violations worldwide.
       </p>
       
-      <div className="flex justify-end mb-4">
+      <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
+        <Input
+          placeholder="Search violations by type, location, or description..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-1 bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground"
+        />
         <Select onValueChange={setSelectedSeverity} value={selectedSeverity}>
-          <SelectTrigger className="w-[180px] bg-secondary border-secondary-foreground text-primary-foreground">
+          <SelectTrigger className="w-full md:w-[180px] bg-secondary border-secondary-foreground text-foreground">
             <SelectValue placeholder="Filter by Severity" />
           </SelectTrigger>
           <SelectContent className="bg-card border-highlight/20">

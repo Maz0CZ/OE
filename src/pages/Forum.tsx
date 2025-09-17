@@ -164,7 +164,7 @@ const Forum: React.FC = () => {
       <div className="space-y-8">
         <h1 className="text-5xl font-extrabold text-foreground text-center">Community Forum</h1>
         <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto">
-          Discuss global events, share insights, and connect with others.
+          Loading posts data...
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <ForumPostSkeleton />
@@ -206,7 +206,7 @@ const Forum: React.FC = () => {
                   placeholder="Enter post title"
                   value={newPostTitle}
                   onChange={(e) => setNewPostTitle(e.target.value)}
-                  className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+                  className="bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground"
                   required
                 />
               </div>
@@ -217,7 +217,7 @@ const Forum: React.FC = () => {
                   placeholder="Write your post content here..."
                   value={newPostContent}
                   onChange={(e) => setNewPostContent(e.target.value)}
-                  className="bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground min-h-[100px]"
+                  className="bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground min-h-[100px]"
                   required
                 />
               </div>
@@ -234,7 +234,7 @@ const Forum: React.FC = () => {
           placeholder="Search forum posts by title or content..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full max-w-md bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+          className="w-full max-w-md bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground"
         />
       </div>
 

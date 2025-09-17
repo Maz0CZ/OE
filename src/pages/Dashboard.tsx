@@ -215,9 +215,8 @@ const Dashboard: React.FC = () => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
+              </ResponsiveContainer>
+            </CardContent>
         </Card>
 
         <Card className="bg-card border-highlight/20">
@@ -227,7 +226,7 @@ const Dashboard: React.FC = () => {
               placeholder="Search activity..."
               value={activitySearchTerm}
               onChange={(e) => setActivitySearchTerm(e.target.value)}
-              className="mt-2 bg-secondary border-secondary-foreground text-primary-foreground placeholder:text-muted-foreground"
+              className="mt-2 bg-secondary border-secondary-foreground text-foreground placeholder:text-muted-foreground"
             />
           </CardHeader>
           <CardContent className="space-y-4">

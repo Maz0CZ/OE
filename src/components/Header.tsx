@@ -20,6 +20,11 @@ import {
 const Header: React.FC = () => {
   const { isAuthenticated, currentUser, logout, isLoading } = useAuth();
 
+  // Add console logs for debugging
+  console.log("Header Render - isLoading:", isLoading);
+  console.log("Header Render - isAuthenticated:", isAuthenticated);
+  console.log("Header Render - currentUser:", currentUser);
+
   if (isLoading) {
     return (
       <header className="sticky top-0 z-40 w-full border-b border-highlight/20 bg-card">
