@@ -128,7 +128,6 @@ const ProfilePage: React.FC = () => {
         <p className="text-xl">You must be logged in to view your profile.</p>
       </div>
     );
-  );
   }
 
   return (
