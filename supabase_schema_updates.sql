@@ -1,10 +1,10 @@
--- 1. Add new columns to the 'profiles' table
-ALTER TABLE public.profiles
-ADD COLUMN title TEXT,
-ADD COLUMN work TEXT,
-ADD COLUMN website TEXT;
+-- 1. Add new columns to the 'profiles' table (if not already done)
+-- ALTER TABLE public.profiles
+-- ADD COLUMN title TEXT,
+-- ADD COLUMN work TEXT,
+-- ADD COLUMN website TEXT;
 
--- 2. Create the 'natural_disasters' table
+-- 2. Create the 'natural_disasters' table (if not already done)
 CREATE TABLE public.natural_disasters (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
@@ -28,12 +28,14 @@ ON public.natural_disasters FOR SELECT
 TO authenticated
 USING (true);
 
--- Policy: Allow reporters to insert natural disasters
-CREATE POLICY "Allow reporters to insert natural_disasters"
+-- Policy: Allow users with 'reporter' role in profiles table to insert natural disasters
+CREATE POLICY "Allow reporters to insert natural_disasters_via_profile_role"
 ON public.natural_disasters FOR INSERT
-TO reporter
-WITH CHECK (true);
+TO authenticated
+WITH CHECK (
+    (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'reporter'
+);
 
--- 3. Add 'log_type' column to the 'logs' table
-ALTER TABLE public.logs
-ADD COLUMN log_type TEXT DEFAULT 'general_info';
+-- 3. Add 'log_type' column to the 'logs' table (if not already done)
+-- ALTER TABLE public.logs
+-- ADD COLUMN log_type TEXT DEFAULT 'general_info';
