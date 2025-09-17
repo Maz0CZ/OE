@@ -93,6 +93,7 @@ const ConflictDetailModal: React.FC<ConflictDetailModalProps> = ({
         );
         throw error;
       }
+      console.log("Fetched conflict details:", data); // DEBUG LOG
       return data as Conflict;
     },
     enabled: isOpen && !!conflictId, // Only fetch when modal is open and conflictId is present
