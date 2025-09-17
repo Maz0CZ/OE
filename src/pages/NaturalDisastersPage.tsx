@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { logActivity } from "@/utils/logger";
 import { useAuth } from "@/context/AuthContext";
-import { Earthquake, CloudRain, Tornado, Fire, MapPin, CalendarDays, Scale } from "lucide-react";
+import { Activity, CloudRain, Tornado, Fire, MapPin, CalendarDays, Scale, Waves, Mountain, Sun } from "lucide-react"; // Updated imports
 import {
   Select,
   SelectContent,
@@ -117,12 +117,16 @@ const NaturalDisastersPage: React.FC = () => {
 
   const getDisasterIcon = (type: string) => {
     switch (type.toLowerCase()) {
-      case "earthquake": return <Earthquake size={20} className="text-highlight" />;
+      case "earthquake": return <Activity size={20} className="text-highlight" />;
       case "flood": return <CloudRain size={20} className="text-highlight" />;
       case "hurricane":
       case "typhoon":
       case "cyclone": return <Tornado size={20} className="text-highlight" />;
       case "wildfire": return <Fire size={20} className="text-highlight" />;
+      case "tsunami": return <Waves size={20} className="text-highlight" />;
+      case "volcanic eruption": return <Mountain size={20} className="text-highlight" />;
+      case "drought": return <Sun size={20} className="text-highlight" />;
+      case "landslide": return <Mountain size={20} className="text-highlight" />;
       default: return <MapPin size={20} className="text-highlight" />;
     }
   };
