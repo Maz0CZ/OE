@@ -42,7 +42,6 @@ const Dashboard: React.FC = () => {
         logActivity(`Error fetching all conflicts summary: ${error.message}`, 'error', currentUser?.id);
         throw error;
       }
-      console.log("Fetched allConflicts:", data); // DEBUG LOG
       return data as ConflictSummary[];
     }
   });
@@ -69,7 +68,6 @@ const Dashboard: React.FC = () => {
         logActivity(`Error fetching violations count: ${error.message}`, 'error', currentUser?.id);
         throw error;
       }
-      console.log("Fetched violationsCount:", count); // DEBUG LOG
       return count || 0;
     }
   });
@@ -86,7 +84,6 @@ const Dashboard: React.FC = () => {
         logActivity(`Error fetching UN declarations count: ${error.message}`, 'error', currentUser?.id);
         throw error;
       }
-      console.log("Fetched unDeclarationsCount:", count); // DEBUG LOG
       return count || 0;
     }
   });
@@ -122,7 +119,6 @@ const Dashboard: React.FC = () => {
         logActivity(`Error fetching recent logs: ${error.message}`, 'error', currentUser?.id);
         throw error;
       }
-      console.log("Fetched recentLogs:", data); // DEBUG LOG
       return data;
     }
   });
