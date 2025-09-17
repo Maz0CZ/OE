@@ -13,9 +13,9 @@ interface UserProfile {
   avatar_url?: string;
   email: string;
   status: "active" | "banned";
-  title?: string; // New field
-  work?: string; // New field
-  website?: string; // New field
+  title?: string;
+  work?: string;
+  website?: string;
 }
 
 interface AuthContextType {
@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("username, role, avatar_url, status, title, work, website") // Include new fields
+        .select("username, role, avatar_url, status, title, work, website")
         .eq("id", user.id)
         .single();
 
@@ -64,14 +64,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("fetchUserProfile: Unexpected error in fetchUserProfile:", error);
       setCurrentUser(null);
     } finally {
-      setIsLoading(false); // Ensure isLoading is set to false after profile fetch attempt
+      setIsLoading(false);
       console.log("fetchUserProfile: isLoading set to false.");
     }
   };
 
   useEffect(() => {
     let isMounted = true;
-    setIsLoading(true); // Start loading state immediately
+    setIsLoading(true);
     console.log("AuthContext useEffect: Initializing, isLoading set to true.");
 
     const getInitialSession = async () => {
@@ -84,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           logActivity(`Error getting initial session: ${error.message}`, 'error');
           if (isMounted) {
             setCurrentUser(null);
-            setIsLoading(false); // Set false if initial session check fails
+            setIsLoading(false);
             console.log("AuthContext useEffect: Initial session error, isLoading set to false.");
           }
           return;
@@ -92,12 +92,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (session?.user) {
           console.log("AuthContext useEffect: Initial session found, user:", session.user.email);
-          await fetchUserProfile(session.user); // fetchUserProfile will set isLoading(false)
+          await fetchUserProfile(session.user);
           logActivity(`Initial session found for user: ${session.user.email}`, 'info', session.user.id);
         } else {
           if (isMounted) {
             setCurrentUser(null);
-            setIsLoading(false); // Set false if no initial session
+            setIsLoading(false);
             console.log("AuthContext useEffect: No initial session, isLoading set to false.");
           }
           logActivity('No initial active session found', 'info');
@@ -119,14 +119,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!isMounted) return;
         
         console.log("AuthContext onAuthStateChange: Event:", event, "Session:", session);
-        setIsLoading(true); // Set loading true again for any state change
+        setIsLoading(true);
         if (session?.user) {
           console.log("AuthContext onAuthStateChange: Session user found, fetching profile.");
-          await fetchUserProfile(session.user); // fetchUserProfile will set isLoading(false)
+          await fetchUserProfile(session.user);
           logActivity(`Auth state changed to authenticated for user: ${session.user.email}`, 'info', session.user.id);
         } else {
           setCurrentUser(null);
-          setIsLoading(false); // Set false if unauthenticated
+          setIsLoading(false);
           console.log("AuthContext onAuthStateChange: No session user, isLoading set to false.");
           logActivity('Auth state changed to unauthenticated', 'info');
         }
@@ -138,7 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       authListener.subscription.unsubscribe();
       console.log("AuthContext useEffect: Cleanup, auth listener unsubscribed.");
     };
-  }, []); // Empty dependency array
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
@@ -156,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (data.user) {
         console.log("AuthContext login: User data received, fetching profile.");
-        await fetchUserProfile(data.user); // fetchUserProfile will set isLoading(false)
+        await fetchUserProfile(data.user);
         toast.success("Logged in successfully!");
         logActivity(`User ${email} logged in successfully.`, 'info', data.user.id);
         return true;
@@ -209,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return false;
         }
 
-        await fetchUserProfile(authData.user); // fetchUserProfile will set isLoading(false)
+        await fetchUserProfile(authData.user);
         toast.success("Registration successful! Welcome to OpenEyes.");
         logActivity(`New user registered: ${email} (ID: ${authData.user.id})`, 'info', authData.user.id);
         return true;
@@ -252,7 +252,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const isAuthenticated = !!currentUser && !isLoading;
+  // Redefine isAuthenticated to only depend on currentUser presence
+  const isAuthenticated = !!currentUser;
   const isAdmin = currentUser?.role === "admin";
   const isModerator = currentUser?.role === "moderator";
   const isReporter = currentUser?.role === "reporter";
