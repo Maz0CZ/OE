@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabaseClient";
 import { logActivity } from "@/utils/logger";
 import { useAuth } from "@/context/AuthContext";
-import { Activity, CloudRain, Tornado, Fire, MapPin, CalendarDays, Scale, Waves, Mountain, Sun } from "lucide-react"; // Updated imports
+import { Activity, CloudRain, Tornado, Flame, MapPin, CalendarDays, Scale, Waves, Mountain, Sun } from "lucide-react"; // Updated imports: Fire -> Flame
 import {
   Select,
   SelectContent,
@@ -122,7 +122,7 @@ const NaturalDisastersPage: React.FC = () => {
       case "hurricane":
       case "typhoon":
       case "cyclone": return <Tornado size={20} className="text-highlight" />;
-      case "wildfire": return <Fire size={20} className="text-highlight" />;
+      case "wildfire": return <Flame size={20} className="text-highlight" />; {/* Changed Fire to Flame */}
       case "tsunami": return <Waves size={20} className="text-highlight" />;
       case "volcanic eruption": return <Mountain size={20} className="text-highlight" />;
       case "drought": return <Sun size={20} className="text-highlight" />;
