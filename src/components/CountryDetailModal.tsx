@@ -68,7 +68,7 @@ const CountryDetailModal: React.FC<CountryDetailModalProps> = ({
       <DialogContent className="sm:max-w-[425px] bg-card border-highlight/20">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-foreground flex items-center gap-2">
-            {isLoading ? "Loading..." : (country?.flag_emoji ? <span className="text-3xl">{country.flag_emoji}</span> : <Globe size={24} className="text-highlight" />)}
+            {isLoading ? "Loading..." : (country?.flag_emoji ? <span className="text-3xl flag-emoji" key={country.id}>{country.flag_emoji}</span> : <Globe size={24} className="text-highlight" />)}
             {isLoading ? "Country Details" : country?.name || "Country Details"}
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
