@@ -13,6 +13,9 @@ interface UserProfile {
   avatar_url?: string;
   email: string;
   status: "active" | "banned";
+  title?: string; // New field
+  work?: string; // New field
+  website?: string; // New field
 }
 
 interface AuthContextType {
@@ -33,64 +36,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const getSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("Error getting session:", error.message);
-          logActivity(`Error getting session: ${error.message}`, 'error');
-          if (isMounted) setIsLoading(false);
-          return;
-        }
-
-        if (session?.user) {
-          await fetchUserProfile(session.user);
-          logActivity(`Session found for user: ${session.user.email}`, 'info', session.user.id);
-        } else {
-          if (isMounted) {
-            setCurrentUser(null);
-            setIsLoading(false);
-          }
-          logActivity('No active session found', 'info');
-        }
-      } catch (error) {
-        console.error("Unexpected error in getSession:", error);
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    getSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!isMounted) return;
-        
-        if (session?.user) {
-          await fetchUserProfile(session.user);
-          logActivity(`User authenticated: ${session.user.email}`, 'info', session.user.id);
-        } else {
-          setCurrentUser(null);
-          logActivity('User unauthenticated', 'info');
-        }
-        setIsLoading(false);
-      }
-    );
-
-    return () => {
-      isMounted = false;
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
   const fetchUserProfile = async (user: SupabaseUser) => {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("username, role, avatar_url, status")
+        .select("username, role, avatar_url, status, title, work, website") // Include new fields
         .eq("id", user.id)
         .single();
 
@@ -98,7 +48,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("Error fetching user profile:", error.message);
         logActivity(`Error fetching profile for user ${user.id}: ${error.message}`, 'error', user.id);
         setCurrentUser(null);
-        setIsLoading(false);
         return;
       }
 
@@ -109,13 +58,74 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...data 
         });
       }
-      setIsLoading(false);
     } catch (error) {
       console.error("Unexpected error in fetchUserProfile:", error);
       setCurrentUser(null);
-      setIsLoading(false);
+    } finally {
+      setIsLoading(false); // Ensure isLoading is set to false after profile fetch attempt
     }
   };
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true); // Start loading state immediately
+
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting initial session:", error.message);
+          logActivity(`Error getting initial session: ${error.message}`, 'error');
+          if (isMounted) {
+            setCurrentUser(null);
+            setIsLoading(false); // Set false if initial session check fails
+          }
+          return;
+        }
+
+        if (session?.user) {
+          await fetchUserProfile(session.user); // fetchUserProfile will set isLoading(false)
+          logActivity(`Initial session found for user: ${session.user.email}`, 'info', session.user.id);
+        } else {
+          if (isMounted) {
+            setCurrentUser(null);
+            setIsLoading(false); // Set false if no initial session
+          }
+          logActivity('No initial active session found', 'info');
+        }
+      } catch (error) {
+        console.error("Unexpected error in getInitialSession:", error);
+        if (isMounted) {
+          setCurrentUser(null);
+          setIsLoading(false);
+        }
+      }
+    };
+
+    getInitialSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!isMounted) return;
+        
+        setIsLoading(true); // Set loading true again for any state change
+        if (session?.user) {
+          await fetchUserProfile(session.user); // fetchUserProfile will set isLoading(false)
+          logActivity(`Auth state changed to authenticated for user: ${session.user.email}`, 'info', session.user.id);
+        } else {
+          setCurrentUser(null);
+          setIsLoading(false); // Set false if unauthenticated
+          logActivity('Auth state changed to unauthenticated', 'info');
+        }
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, []); // Empty dependency array
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
@@ -130,7 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (data.user) {
-        await fetchUserProfile(data.user);
+        await fetchUserProfile(data.user); // fetchUserProfile will set isLoading(false)
         toast.success("Logged in successfully!");
         logActivity(`User ${email} logged in successfully.`, 'info', data.user.id);
         return true;
@@ -179,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return false;
         }
 
-        await fetchUserProfile(authData.user);
+        await fetchUserProfile(authData.user); // fetchUserProfile will set isLoading(false)
         toast.success("Registration successful! Welcome to OpenEyes.");
         logActivity(`New user registered: ${email} (ID: ${authData.user.id})`, 'info', authData.user.id);
         return true;

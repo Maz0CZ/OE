@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Swords, ShieldAlert, Landmark, Users, MessageSquareText, Globe, BookOpen } from "lucide-react"; // Added BookOpen icon
+import { LayoutDashboard, Swords, ShieldAlert, Landmark, Users, MessageSquareText, Globe, BookOpen, CloudLightning } from "lucide-react"; // Added CloudLightning icon
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
@@ -18,6 +18,12 @@ export const Sidebar: React.FC = () => {
       name: "Conflicts",
       href: "/conflicts",
       icon: <Swords className="h-5 w-5" />,
+      roles: ["admin", "moderator", "reporter", "user", "guest"],
+    },
+    {
+      name: "Natural Disasters", // New item
+      href: "/natural-disasters",
+      icon: <CloudLightning className="h-5 w-5" />, // New icon
       roles: ["admin", "moderator", "reporter", "user", "guest"],
     },
     {

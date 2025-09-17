@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Send } from "lucide-react";
+import { logActivity } from "@/utils/logger"; // Import the new logger
 
 interface Comment {
   id: string;
@@ -38,7 +39,10 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        logActivity(`Error fetching comments for post ${postId}: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
+        throw error;
+      }
       return data as Comment[];
     }
   });
@@ -62,9 +66,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
       setNewCommentContent("");
       queryClient.invalidateQueries({ queryKey: ['comments', postId] });
       toast.success("Comment added successfully!");
+      logActivity(`User ${currentUser?.username} added a comment to post ${postId}.`, 'info', currentUser?.id, 'comment_added');
     },
     onError: (error) => {
       toast.error(`Error adding comment: ${error.message}`);
+      logActivity(`Error adding comment to post ${postId}: ${error.message}`, 'error', currentUser?.id, 'comment_add_failed');
     }
   });
 

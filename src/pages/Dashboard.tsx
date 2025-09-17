@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import MetricCard from "@/components/MetricCard";
-import { Swords, TriangleAlert, Building, CircleDot } from "lucide-react";
+import { Swords, TriangleAlert, Building, CircleDot, CloudLightning } from "lucide-react"; // Added CloudLightning for natural disasters
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import InteractiveWorldMap from "@/components/InteractiveWorldMap";
@@ -26,6 +26,13 @@ interface ConflictLocation {
   lon: number;
 }
 
+interface SystemLog {
+  id: string;
+  message: string;
+  created_at: string;
+  log_type: string; // Added log_type
+}
+
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const [activitySearchTerm, setActivitySearchTerm] = useState(""); // New state for activity search
@@ -39,7 +46,7 @@ const Dashboard: React.FC = () => {
         .select('id, name, status, severity, lat, lon');
 
       if (error) {
-        logActivity(`Error fetching all conflicts summary: ${error.message}`, 'error', currentUser?.id);
+        logActivity(`Error fetching all conflicts summary: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
         throw error;
       }
       return data as ConflictSummary[];
@@ -65,7 +72,7 @@ const Dashboard: React.FC = () => {
         .select('*', { count: 'exact', head: true });
 
       if (error) {
-        logActivity(`Error fetching violations count: ${error.message}`, 'error', currentUser?.id);
+        logActivity(`Error fetching violations count: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
         throw error;
       }
       return count || 0;
@@ -81,7 +88,23 @@ const Dashboard: React.FC = () => {
         .select('*', { count: 'exact', head: true });
 
       if (error) {
-        logActivity(`Error fetching UN declarations count: ${error.message}`, 'error', currentUser?.id);
+        logActivity(`Error fetching UN declarations count: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
+        throw error;
+      }
+      return count || 0;
+    }
+  });
+
+  // Fetch count of Natural Disasters
+  const { data: naturalDisastersCount, isLoading: naturalDisastersLoading, error: naturalDisastersError } = useQuery<number>({
+    queryKey: ['naturalDisastersCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('natural_disasters')
+        .select('*', { count: 'exact', head: true });
+
+      if (error) {
+        logActivity(`Error fetching natural disasters count: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
         throw error;
       }
       return count || 0;
@@ -105,18 +128,19 @@ const Dashboard: React.FC = () => {
     { name: "Low", value: severityCounts?.low || 0, color: "#4b5563" }, // Darker Gray
   ];
 
-  // Fetch recent logs for Recent Activity
-  const { data: recentLogs, isLoading: logsLoading, error: logsError } = useQuery<{ id: string; message: string; created_at: string }[]>({
+  // Fetch recent logs for Recent Activity, filtering by specific types
+  const { data: recentLogs, isLoading: logsLoading, error: logsError } = useQuery<SystemLog[]>({
     queryKey: ['recentLogs'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('logs')
-        .select('id, message, created_at')
+        .select('id, message, created_at, log_type')
+        .in('log_type', ['conflict_added', 'violation_added', 'declaration_added', 'post_created', 'disaster_added', 'profile_update']) // Filter for relevant types
         .order('created_at', { ascending: false })
-        .limit(10); // Increased limit to make search more useful
+        .limit(10);
 
       if (error) {
-        logActivity(`Error fetching recent logs: ${error.message}`, 'error', currentUser?.id);
+        logActivity(`Error fetching recent logs: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
         throw error;
       }
       return data;
@@ -128,7 +152,7 @@ const Dashboard: React.FC = () => {
     log.message.toLowerCase().includes(activitySearchTerm.toLowerCase())
   );
 
-  if (conflictsLoading || violationsLoading || unDeclarationsLoading || logsLoading) {
+  if (conflictsLoading || violationsLoading || unDeclarationsLoading || naturalDisastersLoading || logsLoading) {
     return (
       <div className="space-y-8 text-center">
         <h1 className="text-5xl font-extrabold text-foreground">Global Overview</h1>
@@ -137,11 +161,11 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  if (conflictsError || violationsError || unDeclarationsError || logsError) {
+  if (conflictsError || violationsError || unDeclarationsError || naturalDisastersError || logsError) {
     return (
       <div className="space-y-8 text-center">
         <h1 className="text-5xl font-extrabold text-foreground">Global Overview</h1>
-        <p className="text-lg text-destructive">Error loading dashboard: {conflictsError?.message || violationsError?.message || unDeclarationsError?.message || logsError?.message}</p>
+        <p className="text-lg text-destructive">Error loading dashboard: {conflictsError?.message || violationsError?.message || unDeclarationsError?.message || naturalDisastersError?.message || logsError?.message}</p>
       </div>
     );
   }
@@ -155,8 +179,9 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard icon={<Swords size={48} />} value={activeConflicts} label="Active Conflicts" />
         <MetricCard icon={<TriangleAlert size={48} />} value={violationsCount} label="Violations Reported" />
+        <MetricCard icon={<CloudLightning size={48} />} value={naturalDisastersCount} label="Natural Disasters" /> {/* New metric */}
         <MetricCard icon={<Building size={48} />} value={unDeclarationsCount} label="UN Declarations" />
-        <MetricCard icon={<CircleDot size={48} className="text-red-500" />} value={criticalSeverityConflicts} label="Critical Severity" />
+        {/* Removed Critical Severity metric to make space, can be re-added if desired */}
       </div>
 
       <Card className="bg-card border-highlight/20 p-6">

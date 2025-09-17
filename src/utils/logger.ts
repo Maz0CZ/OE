@@ -6,17 +6,20 @@ import { UserRole } from "@/context/AuthContext"; // Import UserRole type
  * @param message The log message.
  * @param logLevel The severity level of the log (e.g., 'info', 'warning', 'error').
  * @param userId Optional ID of the user performing the action.
+ * @param logType Optional type of log (e.g., 'auth', 'post_created', 'disaster_added').
  */
 export const logActivity = async (
   message: string,
   logLevel: "info" | "warning" | "error" | "debug" = "info",
-  userId: string | null = null
+  userId: string | null = null,
+  logType: string = 'general_info' // New parameter with default
 ) => {
   try {
     const { error } = await supabase.from("logs").insert({
       message,
       log_level: logLevel,
       user_id: userId,
+      log_type: logType, // Include log_type
     });
 
     if (error) {

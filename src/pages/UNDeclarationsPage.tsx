@@ -27,7 +27,7 @@ const UNDeclarationsPage = () => {
         .order('date', { ascending: false });
 
       if (error) {
-        logActivity(`Error fetching UN declarations: ${error.message}`, 'error', currentUser?.id);
+        logActivity(`Error fetching UN declarations: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
         throw error;
       }
       return data as UNDeclaration[];

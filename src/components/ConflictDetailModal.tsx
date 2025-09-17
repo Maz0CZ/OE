@@ -89,7 +89,8 @@ const ConflictDetailModal: React.FC<ConflictDetailModalProps> = ({
         logActivity(
           `Error fetching conflict details for ${conflictId}: ${error.message}`,
           "error",
-          currentUser?.id
+          currentUser?.id,
+          'data_fetch_error'
         );
         throw error;
       }

@@ -17,6 +17,7 @@ import UNDeclarationsPage from "./pages/UNDeclarationsPage";
 import PostDetailPage from "./pages/PostDetailPage";
 import ProfilePage from "./pages/ProfilePage";
 import WikipediaDataImporter from "./pages/WikipediaDataImporter";
+import NaturalDisastersPage from "./pages/NaturalDisastersPage"; // Import new page
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,14 @@ function App() {
                 element={
                   <Layout>
                     <ConflictsPage />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/natural-disasters" // New route
+                element={
+                  <Layout>
+                    <NaturalDisastersPage />
                   </Layout>
                 }
               />

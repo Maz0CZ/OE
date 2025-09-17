@@ -98,7 +98,7 @@ const ConflictsPage: React.FC = () => {
         .order('start_date', { ascending: false });
 
       if (error) {
-        logActivity(`Error fetching conflicts: ${error.message}`, 'error', currentUser?.id);
+        logActivity(`Error fetching conflicts: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
         throw error;
       }
       return data as Conflict[];
@@ -108,7 +108,7 @@ const ConflictsPage: React.FC = () => {
   const handleViewDetails = (conflictId: string) => {
     setSelectedConflictId(conflictId);
     setIsModalOpen(true);
-    logActivity(`User opened details for conflict: ${conflictId}`, 'info', currentUser?.id);
+    logActivity(`User opened details for conflict: ${conflictId}`, 'info', currentUser?.id, 'conflict_viewed');
   };
 
   const handleModalClose = () => {
@@ -118,7 +118,7 @@ const ConflictsPage: React.FC = () => {
 
   const handleReportUpdate = (conflictId: string) => {
     toast.info(`Reporting update for conflict: ${conflictId}`);
-    logActivity(`User reported update for conflict: ${conflictId}`, 'info', currentUser?.id);
+    logActivity(`User reported update for conflict: ${conflictId}`, 'info', currentUser?.id, 'conflict_update_reported');
     // In a real app, open a form to submit an update
   };
 

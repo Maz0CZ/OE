@@ -29,7 +29,7 @@ const CountriesPage = () => {
         .order('name', { ascending: true });
 
       if (error) {
-        logActivity(`Error fetching countries: ${error.message}`, 'error', currentUser?.id);
+        logActivity(`Error fetching countries: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
         throw error;
       }
       return data as Country[];

@@ -15,7 +15,7 @@ const WikipediaDataImporter: React.FC = () => {
 
   const importDataMutation = useMutation({
     mutationFn: async (url: string) => {
-      logActivity(`Attempting to import data from Wikipedia URL: ${url}`, 'info', currentUser?.id);
+      logActivity(`Attempting to import data from Wikipedia URL: ${url}`, 'info', currentUser?.id, 'data_import_attempt');
       // This is a placeholder for your actual serverless function call.
       // You would replace this with a fetch call to your backend endpoint.
       // Example: await fetch('/api/import-wikipedia-conflicts', { method: 'POST', body: JSON.stringify({ url }) });
@@ -34,12 +34,12 @@ const WikipediaDataImporter: React.FC = () => {
     },
     onSuccess: (data) => {
       toast.success(data.message);
-      logActivity(`Wikipedia data import simulated success.`, 'info', currentUser?.id);
+      logActivity(`Wikipedia data import simulated success.`, 'info', currentUser?.id, 'data_import_success');
       setWikipediaUrl("");
     },
     onError: (error) => {
       toast.error(`Import failed: ${error.message}`);
-      logActivity(`Wikipedia data import simulated failure: ${error.message}`, 'error', currentUser?.id);
+      logActivity(`Wikipedia data import simulated failure: ${error.message}`, 'error', currentUser?.id, 'data_import_failed');
     },
   });
 

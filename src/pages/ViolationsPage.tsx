@@ -34,7 +34,7 @@ const ViolationsPage = () => {
         .order('date', { ascending: false });
 
       if (error) {
-        logActivity(`Error fetching violations: ${error.message}`, 'error', currentUser?.id);
+        logActivity(`Error fetching violations: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
         throw error;
       }
       return data as Violation[];

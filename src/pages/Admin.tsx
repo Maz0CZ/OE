@@ -56,7 +56,7 @@ const Admin: React.FC = () => {
         .select('id, username, role, status, auth_users:id(email)'); // Join with auth.users to get email
 
       if (profilesError) {
-        logActivity(`Error fetching admin users: ${profilesError.message}`, 'error', currentUser?.id);
+        logActivity(`Error fetching admin users: ${profilesError.message}`, 'error', currentUser?.id, 'data_fetch_error');
         throw profilesError;
       }
 
@@ -82,7 +82,7 @@ const Admin: React.FC = () => {
         .eq('moderation_status', 'pending'); // Filter for pending moderation posts
 
       if (error) {
-        logActivity(`Error fetching moderation posts: ${error.message}`, 'error', currentUser?.id);
+        logActivity(`Error fetching moderation posts: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
         throw error;
       }
       // Map fetched data to the format expected by ModerationList
@@ -106,7 +106,7 @@ const Admin: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        logActivity(`Error fetching system logs: ${error.message}`, 'error', currentUser?.id);
+        logActivity(`Error fetching system logs: ${error.message}`, 'error', currentUser?.id, 'data_fetch_error');
         throw error;
       }
       return data as SystemLog[];
@@ -126,11 +126,11 @@ const Admin: React.FC = () => {
     },
     onSuccess: (data, userId) => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
-      logActivity(`User '${userId}' banned by ${currentUser?.username}.`, 'warning', currentUser?.id);
+      logActivity(`User '${userId}' banned by ${currentUser?.username}.`, 'warning', currentUser?.id, 'user_banned');
       toast.success(`User ${userId} has been banned.`);
     },
     onError: (error) => {
-      logActivity(`Error banning user: ${error.message}`, 'error', currentUser?.id);
+      logActivity(`Error banning user: ${error.message}`, 'error', currentUser?.id, 'user_ban_failed');
       toast.error(`Error banning user: ${error.message}`);
     },
   });
@@ -146,11 +146,11 @@ const Admin: React.FC = () => {
     },
     onSuccess: (data, userId) => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
-      logActivity(`User '${userId}' unbanned by ${currentUser?.username}.`, 'info', currentUser?.id);
+      logActivity(`User '${userId}' unbanned by ${currentUser?.username}.`, 'info', currentUser?.id, 'user_unbanned');
       toast.success(`User ${userId} has been unbanned.`);
     },
     onError: (error) => {
-      logActivity(`Error unbanning user: ${error.message}`, 'error', currentUser?.id);
+      logActivity(`Error unbanning user: ${error.message}`, 'error', currentUser?.id, 'user_unban_failed');
       toast.error(`Error unbanning user: ${error.message}`);
     },
   });
@@ -168,11 +168,11 @@ const Admin: React.FC = () => {
     onSuccess: (data, postId) => {
       queryClient.invalidateQueries({ queryKey: ['moderationPosts'] });
       queryClient.invalidateQueries({ queryKey: ['forumPosts'] }); // Also invalidate forum posts
-      logActivity(`Post '${postId}' deleted by ${currentUser?.username}.`, 'warning', currentUser?.id);
+      logActivity(`Post '${postId}' deleted by ${currentUser?.username}.`, 'warning', currentUser?.id, 'post_deleted');
       toast.success(`Post ${postId} has been deleted.`);
     },
     onError: (error) => {
-      logActivity(`Error deleting post: ${error.message}`, 'error', currentUser?.id);
+      logActivity(`Error deleting post: ${error.message}`, 'error', currentUser?.id, 'post_delete_failed');
       toast.error(`Error deleting post: ${error.message}`);
     },
   });
@@ -189,11 +189,11 @@ const Admin: React.FC = () => {
     onSuccess: (data, { postId, status }) => {
       queryClient.invalidateQueries({ queryKey: ['moderationPosts'] });
       queryClient.invalidateQueries({ queryKey: ['forumPosts'] });
-      logActivity(`${currentUser?.username} set post '${postId}' status to '${status}'.`, 'info', currentUser?.id);
+      logActivity(`${currentUser?.username} set post '${postId}' status to '${status}'.`, 'info', currentUser?.id, `post_${status}`);
       toast.info(`Post ${postId} has been marked as ${status}.`);
     },
     onError: (error) => {
-      logActivity(`Error reviewing post: ${error.message}`, 'error', currentUser?.id);
+      logActivity(`Error reviewing post: ${error.message}`, 'error', currentUser?.id, 'post_review_failed');
       toast.error(`Error reviewing post: ${error.message}`);
     },
   });
