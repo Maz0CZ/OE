@@ -127,9 +127,11 @@ const InteractiveWorldMap: React.FC<InteractiveWorldMapProps> = ({
           </Geographies>
           {conflictLocations.map(({ id, name, lat, lon }) => (
             <Marker key={id} coordinates={[lon, lat]} onClick={() => handleMarkerClick(id)}>
-              <g className="z-20"> {/* Added z-20 to the group */}
+              <g className="z-20">
                 <MapPin
-                  size={30}
+                  size={36} // Increased size
+                  stroke="hsl(var(--background))" // Added a stroke for better contrast
+                  strokeWidth={1.5} // Thicker stroke
                   className="text-highlight drop-shadow-md cursor-pointer hover:scale-125 transition-transform duration-200"
                   style={{ transform: "translate(-50%, -100%)" }}
                 />
